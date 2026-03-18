@@ -1,0 +1,37 @@
+syntax = "proto3";
+package balance.v1;
+option go_package = "github.com/dehwyy/balance/internal/generated/pb/v1;balancepb";
+
+import "google/protobuf/timestamp.proto";
+
+service TransactionService {
+  rpc ListTransactions(ListTransactionsRequest) returns (ListTransactionsResponse);
+  rpc GetTransaction(GetTransactionRequest) returns (GetTransactionResponse);
+}
+
+message Transaction {
+  string id = 1;
+  string user_id = 2;
+  string type = 3;
+  string amount = 4;
+  string transaction_id = 5;
+  google.protobuf.Timestamp created_at = 6;
+}
+
+message ListTransactionsRequest {
+  string user_id = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+  google.protobuf.Timestamp from = 4;
+  google.protobuf.Timestamp to = 5;
+}
+message ListTransactionsResponse {
+  repeated Transaction transactions = 1;
+  int64 total = 2;
+}
+
+message GetTransactionRequest {
+  string user_id = 1;
+  string tx_id = 2;
+}
+message GetTransactionResponse { Transaction transaction = 1; }
