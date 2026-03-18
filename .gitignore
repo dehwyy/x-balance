@@ -1,0 +1,18 @@
+# Binaries
+/balance
+*.exe
+
+# Generated
+internal/generated/
+
+# Env
+.env
+*.env
+
+# IDE
+.idea/
+.vscode/
+
+# Test artifacts
+*.test
+coverage.out

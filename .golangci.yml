@@ -1,0 +1,21 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: none
+  enable:
+    - govet
+    - errcheck
+    - staticcheck
+    - ineffassign
+
+formatters:
+  enable:
+    - goimports
+
+formatters-settings:
+  goimports:
+    local-prefixes:
+      - github.com/dehwyy/x-balance
