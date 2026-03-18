@@ -2,8 +2,6 @@
 /balance
 *.exe
 
-# Generated
-internal/generated/
 
 # Env
 .env
