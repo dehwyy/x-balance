@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go build:*)",
+      "Bash(go mod:*)",
+      "Bash(buf:*)",
+      "Bash(xargs grep:*)",
+      "Bash(go vet:*)",
+      "Bash(golangci-lint run:*)",
+      "Bash(golangci-lint:*)",
+      "Bash(go list:*)",
+      "Bash(cd:*)",
+      "Bash(go test:*)",
+      "Bash(make lint:*)",
+      "Bash(goimports -w pkg/test/mocks/)",
+      "Bash(go install:*)",
+      "Bash($HOME/go/bin/goimports -w pkg/test/mocks/)",
+      "Bash($HOME/go/bin/goimports -w internal/)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker ps:*)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(docker compose:*)"
+    ]
+  }
+}
