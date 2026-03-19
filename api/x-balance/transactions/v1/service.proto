@@ -1,0 +1,83 @@
+syntax = "proto3";
+package transactions.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "common/transaction/v1/transaction.proto";
+
+option go_package = "github.com/dehwyy/x-balance/internal/generated/pb/x_balance/transactions/v1;transactionspb";
+
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Transaction Service API"
+    description: "Provides read access to balance event history."
+    version: "1.0"
+  }
+};
+
+// TransactionService provides read access to balance events.
+service TransactionService {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    name: "Transactions"
+    description: "Transaction history endpoints"
+  };
+
+  // ListTransactions returns a paginated list of transactions for a user.
+  rpc ListTransactions(ListTransactionsRequest) returns (ListTransactionsResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "List transactions"
+      description: "Returns a paginated, filtered list of balance events for the user."
+    };
+    option (google.api.http) = {
+      get: "/v1/users/{user_id}/transactions"
+    };
+  }
+
+  // GetTransaction returns a single transaction by ID.
+  rpc GetTransaction(GetTransactionRequest) returns (GetTransactionResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Get transaction"
+      description: "Returns the transaction with the specified ID."
+    };
+    option (google.api.http) = {
+      get: "/v1/users/{user_id}/transactions/{tx_id}"
+    };
+  }
+}
+
+// ListTransactionsRequest is the request for ListTransactions.
+message ListTransactionsRequest {
+  // User identifier
+  string user_id = 1;
+  // Maximum number of results to return
+  int32 limit = 2;
+  // Number of results to skip
+  int32 offset = 3;
+  // Filter: events created after this timestamp
+  google.protobuf.Timestamp from = 4;
+  // Filter: events created before this timestamp
+  google.protobuf.Timestamp to = 5;
+}
+
+// ListTransactionsResponse is the response for ListTransactions.
+message ListTransactionsResponse {
+  // List of transactions
+  repeated common.transaction.v1.Transaction transactions = 1;
+  // Total number of matching transactions
+  int64 total = 2;
+}
+
+// GetTransactionRequest is the request for GetTransaction.
+message GetTransactionRequest {
+  // User identifier
+  string user_id = 1;
+  // Transaction event ID
+  string tx_id = 2;
+}
+
+// GetTransactionResponse is the response for GetTransaction.
+message GetTransactionResponse {
+  // Found transaction
+  common.transaction.v1.Transaction transaction = 1;
+}

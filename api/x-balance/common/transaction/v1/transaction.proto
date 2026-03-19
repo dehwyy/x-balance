@@ -1,0 +1,22 @@
+syntax = "proto3";
+package common.transaction.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/dehwyy/x-balance/internal/generated/pb/x_balance/common/transaction/v1;transactionpb";
+
+// Transaction represents a balance event record.
+message Transaction {
+  // Unique event identifier
+  string id = 1;
+  // Owner user identifier
+  string user_id = 2;
+  // Event type: credit, debit, freeze_hold, freeze_release
+  string type = 3;
+  // Decimal amount as string
+  string amount = 4;
+  // Client-provided idempotency key
+  string transaction_id = 5;
+  // Event creation timestamp
+  google.protobuf.Timestamp created_at = 6;
+}

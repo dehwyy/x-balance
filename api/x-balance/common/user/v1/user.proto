@@ -1,0 +1,22 @@
+syntax = "proto3";
+package common.user.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/dehwyy/x-balance/internal/generated/pb/x_balance/common/user/v1;userpb";
+
+// User represents a balance service user.
+message User {
+  // Unique identifier
+  string id = 1;
+  // Display name
+  string name = 2;
+  // Maximum allowed negative balance
+  string overdraft_limit = 3;
+  // Creation timestamp
+  google.protobuf.Timestamp created_at = 4;
+  // Last update timestamp
+  google.protobuf.Timestamp updated_at = 5;
+  // Soft-delete timestamp
+  google.protobuf.Timestamp deleted_at = 6;
+}

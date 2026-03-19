@@ -1,0 +1,285 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "User Service API",
+    "description": "Manages balance service users: CRUD operations on user accounts.",
+    "version": "1.0"
+  },
+  "tags": [
+    {
+      "name": "Users",
+      "description": "User management endpoints"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/users": {
+      "post": {
+        "summary": "Create user",
+        "description": "Creates a new user with the given name and overdraft limit.",
+        "operationId": "UserService_CreateUser",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/users.v1.CreateUserResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "CreateUserRequest is the request for CreateUser.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/users.v1.CreateUserRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/v1/users/{id}": {
+      "get": {
+        "summary": "Get user",
+        "description": "Returns the user with the specified ID.",
+        "operationId": "UserService_GetUser",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/users.v1.GetUserResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "User identifier",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Users"
+        ]
+      },
+      "delete": {
+        "summary": "Delete user",
+        "description": "Soft-deletes the user with the specified ID.",
+        "operationId": "UserService_DeleteUser",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/users.v1.DeleteUserResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "User identifier",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Users"
+        ]
+      },
+      "put": {
+        "summary": "Update user",
+        "description": "Updates the user's name and overdraft limit.",
+        "operationId": "UserService_UpdateUser",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/users.v1.UpdateUserResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "User identifier",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/users.v1.UserService.UpdateUserBody"
+            }
+          }
+        ],
+        "tags": [
+          "Users"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "common.user.v1.User": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "Unique identifier"
+        },
+        "name": {
+          "type": "string",
+          "title": "Display name"
+        },
+        "overdraftLimit": {
+          "type": "string",
+          "title": "Maximum allowed negative balance"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Last update timestamp"
+        },
+        "deletedAt": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Soft-delete timestamp"
+        }
+      },
+      "description": "User represents a balance service user."
+    },
+    "google.protobuf.Any": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "google.rpc.Status": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/google.protobuf.Any"
+          }
+        }
+      }
+    },
+    "users.v1.CreateUserRequest": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "title": "Display name for the new user"
+        },
+        "overdraftLimit": {
+          "type": "string",
+          "title": "Maximum allowed negative balance (decimal string)"
+        }
+      },
+      "description": "CreateUserRequest is the request for CreateUser."
+    },
+    "users.v1.CreateUserResponse": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "$ref": "#/definitions/common.user.v1.User",
+          "title": "Created user"
+        }
+      },
+      "description": "CreateUserResponse is the response for CreateUser."
+    },
+    "users.v1.DeleteUserResponse": {
+      "type": "object",
+      "description": "DeleteUserResponse is the response for DeleteUser."
+    },
+    "users.v1.GetUserResponse": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "$ref": "#/definitions/common.user.v1.User",
+          "title": "Found user"
+        }
+      },
+      "description": "GetUserResponse is the response for GetUser."
+    },
+    "users.v1.UpdateUserResponse": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "$ref": "#/definitions/common.user.v1.User",
+          "title": "Updated user"
+        }
+      },
+      "description": "UpdateUserResponse is the response for UpdateUser."
+    },
+    "users.v1.UserService.UpdateUserBody": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "title": "New display name"
+        },
+        "overdraftLimit": {
+          "type": "string",
+          "title": "New overdraft limit (decimal string)"
+        }
+      },
+      "description": "UpdateUserRequest is the request for UpdateUser."
+    }
+  }
+}

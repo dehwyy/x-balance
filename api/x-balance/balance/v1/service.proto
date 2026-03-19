@@ -1,0 +1,170 @@
+syntax = "proto3";
+package balance.v1;
+
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "github.com/dehwyy/x-balance/internal/generated/pb/x_balance/balance/v1;balancepb";
+
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Balance Service API"
+    description: "Manages user balances: credit, debit, freeze, and unfreeze operations."
+    version: "1.0"
+  }
+};
+
+// BalanceService provides balance management operations.
+service BalanceService {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    name: "Balance"
+    description: "Balance management endpoints"
+  };
+
+  // GetBalance returns the current balance for a user.
+  rpc GetBalance(GetBalanceRequest) returns (GetBalanceResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Get balance"
+      description: "Returns available, frozen, and total balance for the user."
+    };
+    option (google.api.http) = {
+      get: "/v1/users/{user_id}/balance"
+    };
+  }
+
+  // Credit adds funds to the user's balance.
+  rpc Credit(CreditRequest) returns (CreditResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Credit balance"
+      description: "Adds the specified amount to the user's balance. Idempotent by transaction_id."
+    };
+    option (google.api.http) = {
+      post: "/v1/users/{user_id}/balance/credit"
+      body: "*"
+    };
+  }
+
+  // Debit subtracts funds from the user's balance.
+  rpc Debit(DebitRequest) returns (DebitResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Debit balance"
+      description: "Subtracts the specified amount from the user's balance. Respects overdraft limit. Idempotent by transaction_id."
+    };
+    option (google.api.http) = {
+      post: "/v1/users/{user_id}/balance/debit"
+      body: "*"
+    };
+  }
+
+  // Freeze holds a specific amount, making it unavailable.
+  rpc Freeze(FreezeRequest) returns (FreezeResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Freeze balance"
+      description: "Freezes the specified amount. Optional timeout auto-releases the hold. Idempotent by transaction_id."
+    };
+    option (google.api.http) = {
+      post: "/v1/users/{user_id}/balance/freeze"
+      body: "*"
+    };
+  }
+
+  // Unfreeze releases a previously frozen amount.
+  rpc Unfreeze(UnfreezeRequest) returns (UnfreezeResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Unfreeze balance"
+      description: "Releases the frozen amount identified by the original transaction_id."
+    };
+    option (google.api.http) = {
+      post: "/v1/users/{user_id}/balance/unfreeze"
+      body: "*"
+    };
+  }
+}
+
+// GetBalanceRequest is the request for GetBalance.
+message GetBalanceRequest {
+  // User identifier
+  string user_id = 1;
+}
+
+// GetBalanceResponse is the response for GetBalance.
+message GetBalanceResponse {
+  // Available balance (decimal string)
+  string available = 1;
+  // Frozen balance (decimal string)
+  string frozen = 2;
+  // Total balance: available + frozen (decimal string)
+  string total = 3;
+}
+
+// CreditRequest is the request for Credit.
+message CreditRequest {
+  // User identifier
+  string user_id = 1;
+  // Amount to credit (decimal string)
+  string amount = 2;
+  // Client-provided idempotency key
+  string transaction_id = 3;
+}
+
+// CreditResponse is the response for Credit.
+message CreditResponse {
+  // New available balance after credit (decimal string)
+  string new_balance = 1;
+  // Echoed transaction_id
+  string transaction_id = 2;
+}
+
+// DebitRequest is the request for Debit.
+message DebitRequest {
+  // User identifier
+  string user_id = 1;
+  // Amount to debit (decimal string)
+  string amount = 2;
+  // Client-provided idempotency key
+  string transaction_id = 3;
+}
+
+// DebitResponse is the response for Debit.
+message DebitResponse {
+  // New available balance after debit (decimal string)
+  string new_balance = 1;
+  // Echoed transaction_id
+  string transaction_id = 2;
+}
+
+// FreezeRequest is the request for Freeze.
+message FreezeRequest {
+  // User identifier
+  string user_id = 1;
+  // Amount to freeze (decimal string)
+  string amount = 2;
+  // Client-provided idempotency key
+  string transaction_id = 3;
+  // Auto-release timeout in seconds; 0 means no timeout
+  int64 freeze_timeout_seconds = 4;
+}
+
+// FreezeResponse is the response for Freeze.
+message FreezeResponse {
+  // Frozen amount (decimal string)
+  string frozen_amount = 1;
+  // Echoed transaction_id
+  string transaction_id = 2;
+}
+
+// UnfreezeRequest is the request for Unfreeze.
+message UnfreezeRequest {
+  // User identifier
+  string user_id = 1;
+  // Original freeze transaction_id
+  string transaction_id = 3;
+}
+
+// UnfreezeResponse is the response for Unfreeze.
+message UnfreezeResponse {
+  // Released amount (decimal string)
+  string unfrozen_amount = 1;
+  // Echoed transaction_id
+  string transaction_id = 2;
+}

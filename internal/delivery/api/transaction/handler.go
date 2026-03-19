@@ -1,40 +1,22 @@
 package transactionhandler
 
 import (
-	"context"
+	"go.uber.org/fx"
 
 	"github.com/dehwyy/x-balance/internal/application/service/transactionservice"
-	"github.com/dehwyy/x-balance/internal/delivery/api/transaction/convert"
-	balancepb "github.com/dehwyy/x-balance/internal/generated/pb"
+	transactionspb "github.com/dehwyy/x-balance/internal/generated/pb/transactions/v1"
 )
 
+type Opts struct {
+	fx.In
+	TransactionService *transactionservice.Service
+}
+
 type Handler struct {
-	balancepb.UnimplementedTransactionServiceServer
-	svc *transactionservice.Service
+	transactionspb.UnimplementedTransactionServiceServer
+	transactionservice *transactionservice.Service
 }
 
-func New(svc *transactionservice.Service) *Handler {
-	return &Handler{svc: svc}
-}
-
-func (h *Handler) ListTransactions(
-	ctx context.Context,
-	req *balancepb.ListTransactionsRequest,
-) (*balancepb.ListTransactionsResponse, error) {
-	res, err := h.svc.ListTransactions(ctx, convert.ListTransactionsRequestToDomain(req))
-	if err != nil {
-		return nil, err
-	}
-	return convert.ListTransactionsResponseToProto(res), nil
-}
-
-func (h *Handler) GetTransaction(
-	ctx context.Context,
-	req *balancepb.GetTransactionRequest,
-) (*balancepb.GetTransactionResponse, error) {
-	res, err := h.svc.GetTransaction(ctx, convert.GetTransactionRequestToDomain(req))
-	if err != nil {
-		return nil, err
-	}
-	return convert.GetTransactionResponseToProto(res), nil
+func New(opts Opts) *Handler {
+	return &Handler{transactionservice: opts.TransactionService}
 }

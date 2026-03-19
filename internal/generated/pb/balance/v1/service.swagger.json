@@ -1,0 +1,380 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Balance Service API",
+    "description": "Manages user balances: credit, debit, freeze, and unfreeze operations.",
+    "version": "1.0"
+  },
+  "tags": [
+    {
+      "name": "Balance",
+      "description": "Balance management endpoints"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/users/{userId}/balance": {
+      "get": {
+        "summary": "Get balance",
+        "description": "Returns available, frozen, and total balance for the user.",
+        "operationId": "BalanceService_GetBalance",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/balance.v1.GetBalanceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "userId",
+            "description": "User identifier",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Balance"
+        ]
+      }
+    },
+    "/v1/users/{userId}/balance/credit": {
+      "post": {
+        "summary": "Credit balance",
+        "description": "Adds the specified amount to the user's balance. Idempotent by transaction_id.",
+        "operationId": "BalanceService_Credit",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/balance.v1.CreditResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "userId",
+            "description": "User identifier",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/balance.v1.BalanceService.CreditBody"
+            }
+          }
+        ],
+        "tags": [
+          "Balance"
+        ]
+      }
+    },
+    "/v1/users/{userId}/balance/debit": {
+      "post": {
+        "summary": "Debit balance",
+        "description": "Subtracts the specified amount from the user's balance. Respects overdraft limit. Idempotent by transaction_id.",
+        "operationId": "BalanceService_Debit",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/balance.v1.DebitResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "userId",
+            "description": "User identifier",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/balance.v1.BalanceService.DebitBody"
+            }
+          }
+        ],
+        "tags": [
+          "Balance"
+        ]
+      }
+    },
+    "/v1/users/{userId}/balance/freeze": {
+      "post": {
+        "summary": "Freeze balance",
+        "description": "Freezes the specified amount. Optional timeout auto-releases the hold. Idempotent by transaction_id.",
+        "operationId": "BalanceService_Freeze",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/balance.v1.FreezeResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "userId",
+            "description": "User identifier",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/balance.v1.BalanceService.FreezeBody"
+            }
+          }
+        ],
+        "tags": [
+          "Balance"
+        ]
+      }
+    },
+    "/v1/users/{userId}/balance/unfreeze": {
+      "post": {
+        "summary": "Unfreeze balance",
+        "description": "Releases the frozen amount identified by the original transaction_id.",
+        "operationId": "BalanceService_Unfreeze",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/balance.v1.UnfreezeResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "userId",
+            "description": "User identifier",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/balance.v1.BalanceService.UnfreezeBody"
+            }
+          }
+        ],
+        "tags": [
+          "Balance"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "balance.v1.BalanceService.CreditBody": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "string",
+          "title": "Amount to credit (decimal string)"
+        },
+        "transactionId": {
+          "type": "string",
+          "title": "Client-provided idempotency key"
+        }
+      },
+      "description": "CreditRequest is the request for Credit."
+    },
+    "balance.v1.BalanceService.DebitBody": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "string",
+          "title": "Amount to debit (decimal string)"
+        },
+        "transactionId": {
+          "type": "string",
+          "title": "Client-provided idempotency key"
+        }
+      },
+      "description": "DebitRequest is the request for Debit."
+    },
+    "balance.v1.BalanceService.FreezeBody": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "string",
+          "title": "Amount to freeze (decimal string)"
+        },
+        "transactionId": {
+          "type": "string",
+          "title": "Client-provided idempotency key"
+        },
+        "freezeTimeoutSeconds": {
+          "type": "string",
+          "format": "int64",
+          "title": "Auto-release timeout in seconds; 0 means no timeout"
+        }
+      },
+      "description": "FreezeRequest is the request for Freeze."
+    },
+    "balance.v1.BalanceService.UnfreezeBody": {
+      "type": "object",
+      "properties": {
+        "transactionId": {
+          "type": "string",
+          "title": "Original freeze transaction_id"
+        }
+      },
+      "description": "UnfreezeRequest is the request for Unfreeze."
+    },
+    "balance.v1.CreditResponse": {
+      "type": "object",
+      "properties": {
+        "newBalance": {
+          "type": "string",
+          "title": "New available balance after credit (decimal string)"
+        },
+        "transactionId": {
+          "type": "string",
+          "title": "Echoed transaction_id"
+        }
+      },
+      "description": "CreditResponse is the response for Credit."
+    },
+    "balance.v1.DebitResponse": {
+      "type": "object",
+      "properties": {
+        "newBalance": {
+          "type": "string",
+          "title": "New available balance after debit (decimal string)"
+        },
+        "transactionId": {
+          "type": "string",
+          "title": "Echoed transaction_id"
+        }
+      },
+      "description": "DebitResponse is the response for Debit."
+    },
+    "balance.v1.FreezeResponse": {
+      "type": "object",
+      "properties": {
+        "frozenAmount": {
+          "type": "string",
+          "title": "Frozen amount (decimal string)"
+        },
+        "transactionId": {
+          "type": "string",
+          "title": "Echoed transaction_id"
+        }
+      },
+      "description": "FreezeResponse is the response for Freeze."
+    },
+    "balance.v1.GetBalanceResponse": {
+      "type": "object",
+      "properties": {
+        "available": {
+          "type": "string",
+          "title": "Available balance (decimal string)"
+        },
+        "frozen": {
+          "type": "string",
+          "title": "Frozen balance (decimal string)"
+        },
+        "total": {
+          "type": "string",
+          "title": "Total balance: available + frozen (decimal string)"
+        }
+      },
+      "description": "GetBalanceResponse is the response for GetBalance."
+    },
+    "balance.v1.UnfreezeResponse": {
+      "type": "object",
+      "properties": {
+        "unfrozenAmount": {
+          "type": "string",
+          "title": "Released amount (decimal string)"
+        },
+        "transactionId": {
+          "type": "string",
+          "title": "Echoed transaction_id"
+        }
+      },
+      "description": "UnfreezeResponse is the response for Unfreeze."
+    },
+    "google.protobuf.Any": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "google.rpc.Status": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/google.protobuf.Any"
+          }
+        }
+      }
+    }
+  }
+}

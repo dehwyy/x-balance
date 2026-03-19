@@ -1,0 +1,121 @@
+syntax = "proto3";
+package users.v1;
+
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "common/user/v1/user.proto";
+
+option go_package = "github.com/dehwyy/x-balance/internal/generated/pb/x_balance/users/v1;userspb";
+
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "User Service API"
+    description: "Manages balance service users: CRUD operations on user accounts."
+    version: "1.0"
+  }
+};
+
+// UserService provides CRUD operations for balance service users.
+service UserService {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_tag) = {
+    name: "Users"
+    description: "User management endpoints"
+  };
+
+  // CreateUser creates a new user account.
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Create user"
+      description: "Creates a new user with the given name and overdraft limit."
+    };
+    option (google.api.http) = {
+      post: "/v1/users"
+      body: "*"
+    };
+  }
+
+  // GetUser retrieves a user by ID.
+  rpc GetUser(GetUserRequest) returns (GetUserResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Get user"
+      description: "Returns the user with the specified ID."
+    };
+    option (google.api.http) = {
+      get: "/v1/users/{id}"
+    };
+  }
+
+  // UpdateUser updates user name and overdraft limit.
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Update user"
+      description: "Updates the user's name and overdraft limit."
+    };
+    option (google.api.http) = {
+      put: "/v1/users/{id}"
+      body: "*"
+    };
+  }
+
+  // DeleteUser soft-deletes a user by ID.
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Delete user"
+      description: "Soft-deletes the user with the specified ID."
+    };
+    option (google.api.http) = {
+      delete: "/v1/users/{id}"
+    };
+  }
+}
+
+// CreateUserRequest is the request for CreateUser.
+message CreateUserRequest {
+  // Display name for the new user
+  string name = 1;
+  // Maximum allowed negative balance (decimal string)
+  string overdraft_limit = 2;
+}
+
+// CreateUserResponse is the response for CreateUser.
+message CreateUserResponse {
+  // Created user
+  common.user.v1.User user = 1;
+}
+
+// GetUserRequest is the request for GetUser.
+message GetUserRequest {
+  // User identifier
+  string id = 1;
+}
+
+// GetUserResponse is the response for GetUser.
+message GetUserResponse {
+  // Found user
+  common.user.v1.User user = 1;
+}
+
+// UpdateUserRequest is the request for UpdateUser.
+message UpdateUserRequest {
+  // User identifier
+  string id = 1;
+  // New display name
+  string name = 2;
+  // New overdraft limit (decimal string)
+  string overdraft_limit = 3;
+}
+
+// UpdateUserResponse is the response for UpdateUser.
+message UpdateUserResponse {
+  // Updated user
+  common.user.v1.User user = 1;
+}
+
+// DeleteUserRequest is the request for DeleteUser.
+message DeleteUserRequest {
+  // User identifier
+  string id = 1;
+}
+
+// DeleteUserResponse is the response for DeleteUser.
+message DeleteUserResponse {}

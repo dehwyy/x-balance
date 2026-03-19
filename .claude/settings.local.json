@@ -19,7 +19,16 @@
       "Bash(docker-compose up:*)",
       "Bash(docker ps:*)",
       "Bash(echo \"exit: $?\")",
-      "Bash(docker compose:*)"
+      "Bash(docker compose:*)",
+      "Bash(find /X/coding/x/dehw/claude -type d ! -path */vendor* ! -path */.git* ! -path */.*)",
+      "Bash(find /X/coding/x/dehw/claude/pkg -type f -name *.go)",
+      "Bash(go get:*)",
+      "Bash(go doc:*)",
+      "Bash(goimports:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git mv:*)",
+      "Bash(make fmt:*)"
     ]
   }
 }

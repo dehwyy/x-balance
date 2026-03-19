@@ -1,0 +1,217 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Transaction Service API",
+    "description": "Provides read access to balance event history.",
+    "version": "1.0"
+  },
+  "tags": [
+    {
+      "name": "Transactions",
+      "description": "Transaction history endpoints"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/users/{userId}/transactions": {
+      "get": {
+        "summary": "List transactions",
+        "description": "Returns a paginated, filtered list of balance events for the user.",
+        "operationId": "TransactionService_ListTransactions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/transactions.v1.ListTransactionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "userId",
+            "description": "User identifier",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "limit",
+            "description": "Maximum number of results to return",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "offset",
+            "description": "Number of results to skip",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "from",
+            "description": "Filter: events created after this timestamp",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "to",
+            "description": "Filter: events created before this timestamp",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          }
+        ],
+        "tags": [
+          "Transactions"
+        ]
+      }
+    },
+    "/v1/users/{userId}/transactions/{txId}": {
+      "get": {
+        "summary": "Get transaction",
+        "description": "Returns the transaction with the specified ID.",
+        "operationId": "TransactionService_GetTransaction",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/transactions.v1.GetTransactionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/google.rpc.Status"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "userId",
+            "description": "User identifier",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "txId",
+            "description": "Transaction event ID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Transactions"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "common.transaction.v1.Transaction": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "Unique event identifier"
+        },
+        "userId": {
+          "type": "string",
+          "title": "Owner user identifier"
+        },
+        "type": {
+          "type": "string",
+          "title": "Event type: credit, debit, freeze_hold, freeze_release"
+        },
+        "amount": {
+          "type": "string",
+          "title": "Decimal amount as string"
+        },
+        "transactionId": {
+          "type": "string",
+          "title": "Client-provided idempotency key"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Event creation timestamp"
+        }
+      },
+      "description": "Transaction represents a balance event record."
+    },
+    "google.protobuf.Any": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "google.rpc.Status": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/google.protobuf.Any"
+          }
+        }
+      }
+    },
+    "transactions.v1.GetTransactionResponse": {
+      "type": "object",
+      "properties": {
+        "transaction": {
+          "$ref": "#/definitions/common.transaction.v1.Transaction",
+          "title": "Found transaction"
+        }
+      },
+      "description": "GetTransactionResponse is the response for GetTransaction."
+    },
+    "transactions.v1.ListTransactionsResponse": {
+      "type": "object",
+      "properties": {
+        "transactions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/common.transaction.v1.Transaction"
+          },
+          "title": "List of transactions"
+        },
+        "total": {
+          "type": "string",
+          "format": "int64",
+          "title": "Total number of matching transactions"
+        }
+      },
+      "description": "ListTransactionsResponse is the response for ListTransactions."
+    }
+  }
+}
