@@ -4,27 +4,29 @@ import (
 	"context"
 
 	"github.com/dehwyy/tracerfx/pkg/tracer/dspan"
-	"github.com/dehwyy/x-balance/internal/domain/entity/user"
+	"github.com/dehwyy/x-balance/internal/application/dto"
 	userconvert "github.com/dehwyy/x-balance/internal/domain/entity/user/convert"
 	"github.com/dehwyy/x-balance/internal/infrastructure/repository/models"
 )
 
 func (impl *Implementation) Create(
 	ctx context.Context,
-	u *user.User,
-) (*user.User, error) {
-	ctx, span := dspan.Start(ctx, "userrepo.Create")
+	req dto.UserCreateRequest,
+) (dto.UserCreateResponse, error) {
+	ctx, span := dspan.Start(ctx, "userrepo.Implementation.Create", dspan.Attr("req", req))
 	defer span.End()
 
 	m := &models.User{
-		Name:           u.Name.Value,
-		OverdraftLimit: u.OverdraftLimit.Value,
+		Name:           req.Name.Value,
+		OverdraftLimit: req.OverdraftLimit.Value,
 	}
 
 	db := impl.tx.GetConnection(ctx)
 	if err := db.Create(m).Error; err != nil {
-		return nil, span.Err(err)
+		return dto.UserCreateResponse{}, span.Err(err)
 	}
 
-	return userconvert.ModelToUser(m), nil
+	response := dto.UserCreateResponse{User: *userconvert.ModelToUser(m)}
+	span.WithAttribute("response", response)
+	return response, nil
 }

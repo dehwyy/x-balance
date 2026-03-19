@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/dehwyy/tracerfx/pkg/tracer/dspan"
-	"github.com/dehwyy/x-balance/internal/domain/entity/snapshot"
+	"github.com/dehwyy/x-balance/internal/application/dto"
 	"github.com/dehwyy/x-balance/internal/infrastructure/repository/models"
 )
 
@@ -13,15 +13,15 @@ var ErrVersionConflict = errors.New("snapshot version conflict")
 
 func (impl *Implementation) UpdateVersion(
 	ctx context.Context,
-	s *snapshot.Snapshot,
+	req dto.SnapshotUpdateVersionRequest,
 ) error {
-	ctx, span := dspan.Start(ctx, "snapshotrepo.UpdateVersion")
+	ctx, span := dspan.Start(ctx, "snapshotrepo.Implementation.UpdateVersion", dspan.Attr("req", req))
 	defer span.End()
 
 	db := impl.tx.GetConnection(ctx)
 	result := db.Model(&models.Snapshot{}).
-		Where("id = ? AND version = ?", s.ID.Value, s.Version.Value).
-		Update("version", s.Version.Value+1)
+		Where("id = ? AND version = ?", req.Snapshot.ID.Value, req.Snapshot.Version.Value).
+		Update("version", req.Snapshot.Version.Value+1)
 
 	if result.Error != nil {
 		return span.Err(result.Error)

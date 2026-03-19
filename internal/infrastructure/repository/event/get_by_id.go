@@ -4,23 +4,25 @@ import (
 	"context"
 
 	"github.com/dehwyy/tracerfx/pkg/tracer/dspan"
-	"github.com/dehwyy/x-balance/internal/domain/entity/event"
+	"github.com/dehwyy/x-balance/internal/application/dto"
 	eventconvert "github.com/dehwyy/x-balance/internal/domain/entity/event/convert"
 	"github.com/dehwyy/x-balance/internal/infrastructure/repository/models"
 )
 
 func (impl *Implementation) GetByID(
 	ctx context.Context,
-	id event.ID,
-) (*event.Event, error) {
-	ctx, span := dspan.Start(ctx, "eventrepo.GetById")
+	req dto.EventGetByIDRequest,
+) (dto.EventGetByIDResponse, error) {
+	ctx, span := dspan.Start(ctx, "eventrepo.Implementation.GetByID", dspan.Attr("req", req))
 	defer span.End()
 
 	db := impl.tx.GetConnection(ctx)
 	var m models.Event
-	if err := db.Where("id = ?", id.Value).First(&m).Error; err != nil {
-		return nil, span.Err(err)
+	if err := db.Where("id = ?", req.ID.Value).First(&m).Error; err != nil {
+		return dto.EventGetByIDResponse{}, span.Err(err)
 	}
 
-	return eventconvert.ModelToEvent(&m), nil
+	response := dto.EventGetByIDResponse{Event: *eventconvert.ModelToEvent(&m)}
+	span.WithAttribute("response", response)
+	return response, nil
 }

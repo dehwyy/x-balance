@@ -4,20 +4,20 @@ import (
 	"context"
 
 	"github.com/dehwyy/tracerfx/pkg/tracer/dspan"
+	"github.com/dehwyy/x-balance/internal/application/dto"
 	"github.com/dehwyy/x-balance/internal/domain/entity/event"
 	eventconvert "github.com/dehwyy/x-balance/internal/domain/entity/event/convert"
-	"github.com/dehwyy/x-balance/internal/domain/repository"
 	"github.com/dehwyy/x-balance/internal/infrastructure/repository/models"
 )
 
 func (impl *Implementation) List(
 	ctx context.Context,
-	req repository.ListEventsRequest,
-) ([]*event.Event, int64, error) {
-	ctx, span := dspan.Start(ctx, "eventrepo.List")
+	req dto.EventListRequest,
+) (dto.EventListResponse, error) {
+	ctx, span := dspan.Start(ctx, "eventrepo.Implementation.List", dspan.Attr("req", req))
 	defer span.End()
 
-	db := impl.tx.GetConnection(ctx).Where("user_id = ?", req.UserID)
+	db := impl.tx.GetConnection(ctx).Where("user_id = ?", req.UserID.Value)
 
 	if req.From != nil {
 		db = db.Where("created_at >= ?", req.From)
@@ -28,26 +28,30 @@ func (impl *Implementation) List(
 
 	var total int64
 	if err := db.Model(&models.Event{}).Count(&total).Error; err != nil {
-		return nil, 0, span.Err(err)
+		return dto.EventListResponse{}, span.Err(err)
 	}
 
-	if req.Limit > 0 {
-		db = db.Limit(req.Limit)
+	limit := req.Pagination.Limit()
+	offset := req.Pagination.Offset()
+	if limit > 0 {
+		db = db.Limit(limit)
 	}
-	if req.Offset > 0 {
-		db = db.Offset(req.Offset)
+	if offset > 0 {
+		db = db.Offset(offset)
 	}
 
 	var ms []models.Event
 	if err := db.Order("created_at DESC").Find(&ms).Error; err != nil {
-		return nil, 0, span.Err(err)
+		return dto.EventListResponse{}, span.Err(err)
 	}
 
-	events := make([]*event.Event, len(ms))
+	events := make([]event.Event, len(ms))
 	for i, m := range ms {
 		m := m
-		events[i] = eventconvert.ModelToEvent(&m)
+		events[i] = *eventconvert.ModelToEvent(&m)
 	}
 
-	return events, total, nil
+	response := dto.EventListResponse{Events: events, Total: total}
+	span.WithAttribute("response", response)
+	return response, nil
 }
