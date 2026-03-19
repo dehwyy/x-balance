@@ -5,8 +5,8 @@ import (
 
 	"github.com/dehwyy/tracerfx/pkg/tracer/dspan"
 	"github.com/dehwyy/x-balance/internal/domain/entity/event"
+	eventconvert "github.com/dehwyy/x-balance/internal/domain/entity/event/convert"
 	"github.com/dehwyy/x-balance/internal/infrastructure/repository/models"
-	"github.com/dehwyy/x-balance/internal/infrastructure/repository/models/convert"
 )
 
 func (impl *Implementation) Create(
@@ -30,5 +30,5 @@ func (impl *Implementation) Create(
 		return nil, span.Err(err)
 	}
 
-	return convert.EventToDomain(m), nil
+	return eventconvert.ModelToEvent(m), nil
 }

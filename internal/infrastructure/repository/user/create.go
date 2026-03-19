@@ -5,8 +5,8 @@ import (
 
 	"github.com/dehwyy/tracerfx/pkg/tracer/dspan"
 	"github.com/dehwyy/x-balance/internal/domain/entity/user"
+	userconvert "github.com/dehwyy/x-balance/internal/domain/entity/user/convert"
 	"github.com/dehwyy/x-balance/internal/infrastructure/repository/models"
-	"github.com/dehwyy/x-balance/internal/infrastructure/repository/models/convert"
 )
 
 func (impl *Implementation) Create(
@@ -26,5 +26,5 @@ func (impl *Implementation) Create(
 		return nil, span.Err(err)
 	}
 
-	return convert.UserToDomain(m), nil
+	return userconvert.ModelToUser(m), nil
 }

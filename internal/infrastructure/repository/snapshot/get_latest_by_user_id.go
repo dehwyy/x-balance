@@ -5,8 +5,8 @@ import (
 
 	"github.com/dehwyy/tracerfx/pkg/tracer/dspan"
 	"github.com/dehwyy/x-balance/internal/domain/entity/snapshot"
+	snapshotconvert "github.com/dehwyy/x-balance/internal/domain/entity/snapshot/convert"
 	"github.com/dehwyy/x-balance/internal/infrastructure/repository/models"
-	"github.com/dehwyy/x-balance/internal/infrastructure/repository/models/convert"
 )
 
 func (impl *Implementation) GetLatestByUserID(
@@ -24,5 +24,5 @@ func (impl *Implementation) GetLatestByUserID(
 		return nil, span.Err(err)
 	}
 
-	return convert.SnapshotToDomain(&m), nil
+	return snapshotconvert.ModelToSnapshot(&m), nil
 }

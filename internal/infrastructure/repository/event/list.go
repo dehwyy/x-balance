@@ -5,9 +5,9 @@ import (
 
 	"github.com/dehwyy/tracerfx/pkg/tracer/dspan"
 	"github.com/dehwyy/x-balance/internal/domain/entity/event"
+	eventconvert "github.com/dehwyy/x-balance/internal/domain/entity/event/convert"
 	"github.com/dehwyy/x-balance/internal/domain/repository"
 	"github.com/dehwyy/x-balance/internal/infrastructure/repository/models"
-	"github.com/dehwyy/x-balance/internal/infrastructure/repository/models/convert"
 )
 
 func (impl *Implementation) List(
@@ -46,7 +46,7 @@ func (impl *Implementation) List(
 	events := make([]*event.Event, len(ms))
 	for i, m := range ms {
 		m := m
-		events[i] = convert.EventToDomain(&m)
+		events[i] = eventconvert.ModelToEvent(&m)
 	}
 
 	return events, total, nil
