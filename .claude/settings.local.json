@@ -28,7 +28,11 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git mv:*)",
-      "Bash(make fmt:*)"
+      "Bash(make fmt:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(go fmt:*)"
     ]
-  }
+  },
+  "spinnerTipsEnabled": false
 }

@@ -4,16 +4,18 @@ import (
 	"context"
 	"time"
 
+	"github.com/dehwyy/tracerfx/pkg/tracer/dspan"
+	"github.com/dehwyy/x-balance/internal/application/dto"
 	"github.com/dehwyy/x-balance/internal/domain/entity/event"
-	"github.com/dehwyy/x-balance/internal/domain/repository"
+	user "github.com/dehwyy/x-balance/internal/domain/entity/user"
+	"github.com/dehwyy/x-balance/pkg/storage"
 )
 
 type ListTransactionsRequest struct {
-	UserID string
-	Limit  int
-	Offset int
-	From   *time.Time
-	To     *time.Time
+	UserID     string
+	Pagination storage.Pagination
+	From       *time.Time
+	To         *time.Time
 }
 
 type ListTransactionsResponse struct {
@@ -23,18 +25,28 @@ type ListTransactionsResponse struct {
 
 func (s *Service) ListTransactions(
 	ctx context.Context,
-	req ListTransactionsRequest,
+	req *ListTransactionsRequest,
 ) (*ListTransactionsResponse, error) {
-	events, total, err := s.eventRepo.List(ctx, repository.ListEventsRequest{
-		UserID: req.UserID,
-		Limit:  req.Limit,
-		Offset: req.Offset,
-		From:   req.From,
-		To:     req.To,
+	ctx, span := dspan.Start(ctx, "transactionservice.Service.ListTransactions", dspan.Attr("req", req))
+	defer span.End()
+
+	listResp, err := s.eventRepo.List(ctx, dto.EventListRequest{
+		UserID:     user.ID{Value: req.UserID},
+		Pagination: req.Pagination,
+		From:       req.From,
+		To:         req.To,
 	})
 	if err != nil {
-		return nil, err
+		return nil, span.Err(err)
 	}
 
-	return &ListTransactionsResponse{Events: events, Total: total}, nil
+	events := make([]*event.Event, len(listResp.Events))
+	for i := range listResp.Events {
+		e := listResp.Events[i]
+		events[i] = &e
+	}
+
+	response := &ListTransactionsResponse{Events: events, Total: listResp.Total}
+	span.WithAttribute("response", response)
+	return response, nil
 }

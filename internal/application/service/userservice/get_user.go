@@ -3,7 +3,9 @@ package userservice
 import (
 	"context"
 
-	"github.com/dehwyy/x-balance/internal/domain/entity/user"
+	"github.com/dehwyy/tracerfx/pkg/tracer/dspan"
+	"github.com/dehwyy/x-balance/internal/application/dto"
+	user "github.com/dehwyy/x-balance/internal/domain/entity/user"
 )
 
 type GetUserRequest struct {
@@ -16,12 +18,17 @@ type GetUserResponse struct {
 
 func (s *Service) GetUser(
 	ctx context.Context,
-	req GetUserRequest,
+	req *GetUserRequest,
 ) (*GetUserResponse, error) {
-	u, err := s.userRepo.GetByID(ctx, user.ID{Value: req.ID})
+	ctx, span := dspan.Start(ctx, "userservice.Service.GetUser", dspan.Attr("req", req))
+	defer span.End()
+
+	userResp, err := s.userRepo.GetByID(ctx, dto.UserGetByIDRequest{ID: user.ID{Value: req.ID}})
 	if err != nil {
-		return nil, err
+		return nil, span.Err(err)
 	}
 
-	return &GetUserResponse{User: u}, nil
+	response := &GetUserResponse{User: &userResp.User}
+	span.WithAttribute("response", response)
+	return response, nil
 }

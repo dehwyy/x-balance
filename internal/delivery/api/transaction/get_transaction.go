@@ -4,8 +4,7 @@ import (
 	"context"
 
 	"github.com/dehwyy/tracerfx/pkg/tracer/dspan"
-	"github.com/dehwyy/x-balance/internal/application/service/transactionservice"
-	eventconvert "github.com/dehwyy/x-balance/internal/domain/entity/event/convert"
+	transactionconvert "github.com/dehwyy/x-balance/internal/delivery/api/transaction/convert"
 	transactionspb "github.com/dehwyy/x-balance/internal/generated/pb/transactions/v1"
 )
 
@@ -16,17 +15,12 @@ func (h *Handler) GetTransaction(
 	ctx, span := dspan.Start(ctx, "transactionDelivery.GetTransaction", dspan.Attr("req", req))
 	defer span.End()
 
-	response, err := h.transactionservice.GetTransaction(ctx, transactionservice.GetTransactionRequest{
-		UserID: req.UserId,
-		TxID:   req.TxId,
-	})
+	response, err := h.transactionservice.GetTransaction(ctx, transactionconvert.GetTransactionRequestToDomain(req))
 	if err != nil {
 		return nil, span.Err(err)
 	}
 
-	protoResponse := &transactionspb.GetTransactionResponse{
-		Transaction: eventconvert.EventToProto(response.Event),
-	}
+	protoResponse := transactionconvert.GetTransactionResponseToProto(response)
 	span.WithAttribute("response", protoResponse)
 	return protoResponse, nil
 }

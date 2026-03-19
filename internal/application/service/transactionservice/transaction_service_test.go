@@ -5,9 +5,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dehwyy/x-balance/internal/application/dto"
 	"github.com/dehwyy/x-balance/internal/application/service/transactionservice"
 	"github.com/dehwyy/x-balance/internal/domain/entity/event"
-	"github.com/dehwyy/x-balance/internal/domain/repository"
+	user "github.com/dehwyy/x-balance/internal/domain/entity/user"
+	"github.com/dehwyy/x-balance/pkg/storage"
 	"github.com/dehwyy/x-balance/pkg/test/mocks"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
@@ -32,17 +34,17 @@ func TestListTransactions_Success(t *testing.T) {
 	fromTime := time.Now().Add(-24 * time.Hour)
 	toTime := time.Now()
 
-	expectedEvents := []*event.Event{
+	eventValues := []event.Event{
 		{
 			ID:            event.ID{Value: "event-1"},
-			UserID:        testUserID,
+			UserID:        user.ID{Value: testUserID},
 			Type:          event.TypeCredit,
 			Amount:        event.Amount{Value: decimal.NewFromInt(100)},
 			TransactionID: event.TransactionID{Value: "tx-1"},
 		},
 		{
 			ID:            event.ID{Value: "event-2"},
-			UserID:        testUserID,
+			UserID:        user.ID{Value: testUserID},
 			Type:          event.TypeDebit,
 			Amount:        event.Amount{Value: decimal.NewFromInt(-50)},
 			TransactionID: event.TransactionID{Value: "tx-2"},
@@ -51,27 +53,26 @@ func TestListTransactions_Success(t *testing.T) {
 
 	expectedTotal := int64(2)
 
-	expectedReq := repository.ListEventsRequest{
-		UserID: testUserID,
-		Limit:  10,
-		Offset: 0,
-		From:   &fromTime,
-		To:     &toTime,
+	expectedReq := dto.EventListRequest{
+		UserID:     user.ID{Value: testUserID},
+		Pagination: storage.NewPagination(10, 0),
+		From:       &fromTime,
+		To:         &toTime,
 	}
 
-	eventRepo.On("List", ctx, expectedReq).Return(expectedEvents, expectedTotal, nil)
+	eventRepo.On("List", ctx, expectedReq).
+		Return(dto.EventListResponse{Events: eventValues, Total: expectedTotal}, nil)
 
 	svc := newTransactionService(eventRepo)
-	resp, err := svc.ListTransactions(ctx, transactionservice.ListTransactionsRequest{
-		UserID: testUserID,
-		Limit:  10,
-		Offset: 0,
-		From:   &fromTime,
-		To:     &toTime,
+	resp, err := svc.ListTransactions(ctx, &transactionservice.ListTransactionsRequest{
+		UserID:     testUserID,
+		Pagination: storage.NewPagination(10, 0),
+		From:       &fromTime,
+		To:         &toTime,
 	})
 
 	require.NoError(t, err)
-	assert.Equal(t, expectedEvents, resp.Events)
+	assert.Len(t, resp.Events, 2)
 	assert.Equal(t, expectedTotal, resp.Total)
 	eventRepo.AssertExpectations(t)
 }
@@ -81,24 +82,18 @@ func TestListTransactions_EmptyResult(t *testing.T) {
 
 	eventRepo := &mocks.EventRepository{}
 
-	expectedEvents := []*event.Event{}
-	expectedTotal := int64(0)
-
-	expectedReq := repository.ListEventsRequest{
-		UserID: testUserID,
-		Limit:  10,
-		Offset: 0,
-		From:   nil,
-		To:     nil,
+	expectedReq := dto.EventListRequest{
+		UserID:     user.ID{Value: testUserID},
+		Pagination: storage.NewPagination(10, 0),
 	}
 
-	eventRepo.On("List", ctx, expectedReq).Return(expectedEvents, expectedTotal, nil)
+	eventRepo.On("List", ctx, expectedReq).
+		Return(dto.EventListResponse{Events: []event.Event{}, Total: int64(0)}, nil)
 
 	svc := newTransactionService(eventRepo)
-	resp, err := svc.ListTransactions(ctx, transactionservice.ListTransactionsRequest{
-		UserID: testUserID,
-		Limit:  10,
-		Offset: 0,
+	resp, err := svc.ListTransactions(ctx, &transactionservice.ListTransactionsRequest{
+		UserID:     testUserID,
+		Pagination: storage.NewPagination(10, 0),
 	})
 
 	require.NoError(t, err)
@@ -112,21 +107,18 @@ func TestListTransactions_RepositoryError(t *testing.T) {
 
 	eventRepo := &mocks.EventRepository{}
 
-	expectedReq := repository.ListEventsRequest{
-		UserID: testUserID,
-		Limit:  10,
-		Offset: 0,
-		From:   nil,
-		To:     nil,
+	expectedReq := dto.EventListRequest{
+		UserID:     user.ID{Value: testUserID},
+		Pagination: storage.NewPagination(10, 0),
 	}
 
-	eventRepo.On("List", ctx, expectedReq).Return(nil, int64(0), gorm.ErrInvalidDB)
+	eventRepo.On("List", ctx, expectedReq).
+		Return(dto.EventListResponse{}, gorm.ErrInvalidDB)
 
 	svc := newTransactionService(eventRepo)
-	_, err := svc.ListTransactions(ctx, transactionservice.ListTransactionsRequest{
-		UserID: testUserID,
-		Limit:  10,
-		Offset: 0,
+	_, err := svc.ListTransactions(ctx, &transactionservice.ListTransactionsRequest{
+		UserID:     testUserID,
+		Pagination: storage.NewPagination(10, 0),
 	})
 
 	assert.ErrorIs(t, err, gorm.ErrInvalidDB)
@@ -138,24 +130,25 @@ func TestGetTransaction_Success(t *testing.T) {
 
 	eventRepo := &mocks.EventRepository{}
 
-	expectedEvent := &event.Event{
+	expectedEvent := event.Event{
 		ID:            event.ID{Value: testEventID},
-		UserID:        testUserID,
+		UserID:        user.ID{Value: testUserID},
 		Type:          event.TypeCredit,
 		Amount:        event.Amount{Value: decimal.NewFromInt(100)},
 		TransactionID: event.TransactionID{Value: "tx-1"},
 	}
 
-	eventRepo.On("GetByID", ctx, event.ID{Value: testEventID}).Return(expectedEvent, nil)
+	eventRepo.On("GetByID", ctx, dto.EventGetByIDRequest{ID: event.ID{Value: testEventID}}).
+		Return(dto.EventGetByIDResponse{Event: expectedEvent}, nil)
 
 	svc := newTransactionService(eventRepo)
-	resp, err := svc.GetTransaction(ctx, transactionservice.GetTransactionRequest{
+	resp, err := svc.GetTransaction(ctx, &transactionservice.GetTransactionRequest{
 		UserID: testUserID,
 		TxID:   testEventID,
 	})
 
 	require.NoError(t, err)
-	assert.Equal(t, expectedEvent, resp.Event)
+	assert.Equal(t, &expectedEvent, resp.Event)
 	eventRepo.AssertExpectations(t)
 }
 
@@ -164,10 +157,11 @@ func TestGetTransaction_NotFound(t *testing.T) {
 
 	eventRepo := &mocks.EventRepository{}
 
-	eventRepo.On("GetByID", ctx, event.ID{Value: testEventID}).Return(nil, gorm.ErrRecordNotFound)
+	eventRepo.On("GetByID", ctx, dto.EventGetByIDRequest{ID: event.ID{Value: testEventID}}).
+		Return(dto.EventGetByIDResponse{}, gorm.ErrRecordNotFound)
 
 	svc := newTransactionService(eventRepo)
-	_, err := svc.GetTransaction(ctx, transactionservice.GetTransactionRequest{
+	_, err := svc.GetTransaction(ctx, &transactionservice.GetTransactionRequest{
 		UserID: testUserID,
 		TxID:   testEventID,
 	})

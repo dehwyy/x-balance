@@ -2,52 +2,39 @@ package repository
 
 import (
 	"context"
-	"time"
 
-	"github.com/dehwyy/x-balance/internal/domain/entity/event"
-	"github.com/dehwyy/x-balance/internal/domain/entity/snapshot"
-	"github.com/shopspring/decimal"
+	"github.com/dehwyy/x-balance/internal/application/dto"
 )
-
-type ListEventsRequest struct {
-	UserID string
-	Limit  int
-	Offset int
-	From   *time.Time
-	To     *time.Time
-}
 
 //go:generate mockery --name=EventRepository --output=../../../pkg/test/mocks --outpkg=mocks
 type EventRepository interface {
 	Create(
 		ctx context.Context,
-		e *event.Event,
-	) (*event.Event, error)
+		req dto.EventCreateRequest,
+	) (dto.EventCreateResponse, error)
 
 	GetByTransactionID(
 		ctx context.Context,
-		txID event.TransactionID,
-	) (*event.Event, error)
+		req dto.EventGetByTxIDRequest,
+	) (dto.EventGetByTxIDResponse, error)
 
 	GetByID(
 		ctx context.Context,
-		id event.ID,
-	) (*event.Event, error)
+		req dto.EventGetByIDRequest,
+	) (dto.EventGetByIDResponse, error)
 
 	List(
 		ctx context.Context,
-		req ListEventsRequest,
-	) ([]*event.Event, int64, error)
+		req dto.EventListRequest,
+	) (dto.EventListResponse, error)
 
 	CountSinceSnapshot(
 		ctx context.Context,
-		userID string,
-		snapshotID snapshot.ID,
-	) (int64, error)
+		req dto.EventCountSinceSnapshotRequest,
+	) (dto.EventCountSinceSnapshotResponse, error)
 
 	SumSinceSnapshot(
 		ctx context.Context,
-		userID string,
-		snapshotID snapshot.ID,
-	) (decimal.Decimal, decimal.Decimal, error)
+		req dto.EventSumSinceSnapshotRequest,
+	) (dto.EventSumSinceSnapshotResponse, error)
 }

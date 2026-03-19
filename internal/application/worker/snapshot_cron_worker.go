@@ -3,7 +3,9 @@ package worker
 import (
 	"context"
 
+	"github.com/dehwyy/x-balance/internal/application/dto"
 	"github.com/dehwyy/x-balance/internal/domain/entity/snapshot"
+	user "github.com/dehwyy/x-balance/internal/domain/entity/user"
 	"github.com/dehwyy/x-balance/internal/domain/repository"
 	"github.com/robfig/cron/v3"
 	"github.com/rs/zerolog"
@@ -58,41 +60,52 @@ func (w *SnapshotCronWorker) createSnapshots(ctx context.Context) error {
 }
 
 func (w *SnapshotCronWorker) CreateSnapshotForUser(ctx context.Context, userID string) error {
-	snap, err := w.snapshotRepo.GetLatestByUserID(ctx, userID)
+	uid := user.ID{Value: userID}
+
+	snapResp, err := w.snapshotRepo.GetLatestByUserID(ctx, dto.SnapshotGetLatestByUserIDRequest{UserID: uid})
+	var snap snapshot.Snapshot
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			snap = &snapshot.Snapshot{
-				UserID:  userID,
+			createResp, err := w.snapshotRepo.Create(ctx, dto.SnapshotCreateRequest{
+				UserID:  uid,
 				Balance: snapshot.Balance{Value: decimal.Zero},
 				Version: snapshot.Version{Value: 0},
-			}
-			snap, err = w.snapshotRepo.Create(ctx, snap)
+			})
 			if err != nil {
 				return err
 			}
+			snap = createResp.Snapshot
 		} else {
 			return err
 		}
+	} else {
+		snap = snapResp.Snapshot
 	}
 
-	count, err := w.eventRepo.CountSinceSnapshot(ctx, userID, snap.ID)
+	countResp, err := w.eventRepo.CountSinceSnapshot(ctx, dto.EventCountSinceSnapshotRequest{
+		UserID:     uid,
+		SnapshotID: snap.ID,
+	})
 	if err != nil {
 		return err
 	}
 
-	if count == 0 {
+	if countResp.Count == 0 {
 		return nil
 	}
 
-	deltaBalance, frozen, err := w.eventRepo.SumSinceSnapshot(ctx, userID, snap.ID)
+	sumResp, err := w.eventRepo.SumSinceSnapshot(ctx, dto.EventSumSinceSnapshotRequest{
+		UserID:     uid,
+		SnapshotID: snap.ID,
+	})
 	if err != nil {
 		return err
 	}
 
-	newBalance := snap.Balance.Value.Add(deltaBalance).Sub(frozen)
+	newBalance := snap.Balance.Value.Add(sumResp.Available).Sub(sumResp.Frozen)
 
-	_, err = w.snapshotRepo.Create(ctx, &snapshot.Snapshot{
-		UserID:  userID,
+	_, err = w.snapshotRepo.Create(ctx, dto.SnapshotCreateRequest{
+		UserID:  uid,
 		Balance: snapshot.Balance{Value: newBalance},
 		Version: snapshot.Version{Value: 0},
 	})
@@ -100,7 +113,9 @@ func (w *SnapshotCronWorker) CreateSnapshotForUser(ctx context.Context, userID s
 }
 
 func (w *SnapshotCronWorker) EnsureInitialSnapshot(ctx context.Context, userID string) error {
-	_, err := w.snapshotRepo.GetLatestByUserID(ctx, userID)
+	uid := user.ID{Value: userID}
+
+	_, err := w.snapshotRepo.GetLatestByUserID(ctx, dto.SnapshotGetLatestByUserIDRequest{UserID: uid})
 	if err == nil {
 		return nil
 	}
@@ -108,8 +123,8 @@ func (w *SnapshotCronWorker) EnsureInitialSnapshot(ctx context.Context, userID s
 		return err
 	}
 
-	_, err = w.snapshotRepo.Create(ctx, &snapshot.Snapshot{
-		UserID:  userID,
+	_, err = w.snapshotRepo.Create(ctx, dto.SnapshotCreateRequest{
+		UserID:  uid,
 		Balance: snapshot.Balance{Value: decimal.Zero},
 		Version: snapshot.Version{Value: 0},
 	})

@@ -2,13 +2,14 @@ package snapshotconvert
 
 import (
 	"github.com/dehwyy/x-balance/internal/domain/entity/snapshot"
+	user "github.com/dehwyy/x-balance/internal/domain/entity/user"
 	"github.com/dehwyy/x-balance/internal/infrastructure/repository/models"
 )
 
 func ModelToSnapshot(m *models.Snapshot) *snapshot.Snapshot {
 	return &snapshot.Snapshot{
 		ID:        snapshot.ID{Value: m.ID},
-		UserID:    m.UserID,
+		UserID:    user.ID{Value: m.UserID},
 		Balance:   snapshot.Balance{Value: m.Balance},
 		Version:   snapshot.Version{Value: m.Version},
 		CreatedAt: m.CreatedAt,
@@ -18,7 +19,7 @@ func ModelToSnapshot(m *models.Snapshot) *snapshot.Snapshot {
 func SnapshotToModel(s *snapshot.Snapshot) *models.Snapshot {
 	return &models.Snapshot{
 		ID:        s.ID.Value,
-		UserID:    s.UserID,
+		UserID:    s.UserID.Value,
 		Balance:   s.Balance.Value,
 		Version:   s.Version.Value,
 		CreatedAt: s.CreatedAt,

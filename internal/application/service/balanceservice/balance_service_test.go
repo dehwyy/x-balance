@@ -4,10 +4,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/dehwyy/x-balance/internal/application/dto"
 	"github.com/dehwyy/x-balance/internal/application/service/balanceservice"
 	"github.com/dehwyy/x-balance/internal/domain/entity/event"
 	"github.com/dehwyy/x-balance/internal/domain/entity/snapshot"
-	"github.com/dehwyy/x-balance/internal/domain/entity/user"
+	user "github.com/dehwyy/x-balance/internal/domain/entity/user"
 	"github.com/dehwyy/x-balance/pkg/test/mocks"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
@@ -22,7 +23,7 @@ func makeSnap(balance string) *snapshot.Snapshot {
 	b, _ := decimal.NewFromString(balance)
 	return &snapshot.Snapshot{
 		ID:      snapshot.ID{Value: "snap-1"},
-		UserID:  testUserID,
+		UserID:  user.ID{Value: testUserID},
 		Balance: snapshot.Balance{Value: b},
 		Version: snapshot.Version{Value: 1},
 	}
@@ -66,28 +67,31 @@ func TestCredit_Idempotency(t *testing.T) {
 
 	snap := makeSnap("100")
 	amount, _ := decimal.NewFromString("50")
+	zero := decimal.Zero
 
-	existingEvent := &event.Event{
+	existingEvent := event.Event{
 		ID:            event.ID{Value: "ev-1"},
-		UserID:        testUserID,
+		UserID:        user.ID{Value: testUserID},
 		TransactionID: event.TransactionID{Value: "tx-idempotent"},
 		Amount:        event.Amount{Value: amount},
 	}
 
-	eventRepo.On("GetByTransactionID", ctx, event.TransactionID{Value: "tx-idempotent"}).Return(existingEvent, nil)
-	snapshotRepo.On("GetLatestByUserID", ctx, testUserID).Return(snap, nil)
-	zero := decimal.Zero
-	eventRepo.On("SumSinceSnapshot", ctx, testUserID, snap.ID).Return(amount, zero, nil)
+	eventRepo.On("GetByTransactionID", ctx, dto.EventGetByTxIDRequest{TransactionID: event.TransactionID{Value: "tx-idempotent"}}).
+		Return(dto.EventGetByTxIDResponse{Event: existingEvent}, nil)
+	snapshotRepo.On("GetLatestByUserID", ctx, dto.SnapshotGetLatestByUserIDRequest{UserID: user.ID{Value: testUserID}}).
+		Return(dto.SnapshotGetLatestByUserIDResponse{Snapshot: *snap}, nil)
+	eventRepo.On("SumSinceSnapshot", ctx, dto.EventSumSinceSnapshotRequest{UserID: user.ID{Value: testUserID}, SnapshotID: snap.ID}).
+		Return(dto.EventSumSinceSnapshotResponse{Available: amount, Frozen: zero}, nil)
 
 	svc := newService(eventRepo, snapshotRepo, userRepo, cache, freeze)
-	resp, err := svc.Credit(ctx, balanceservice.CreditRequest{
-		UserID:        testUserID,
+	resp, err := svc.Credit(ctx, &balanceservice.CreditRequest{
+		UserID:        user.ID{Value: testUserID},
 		Amount:        amount,
-		TransactionID: "tx-idempotent",
+		TransactionID: event.TransactionID{Value: "tx-idempotent"},
 	})
 
 	require.NoError(t, err)
-	assert.Equal(t, "tx-idempotent", resp.TransactionID)
+	assert.Equal(t, "tx-idempotent", resp.TransactionID.Value)
 	eventRepo.AssertExpectations(t)
 }
 
@@ -104,32 +108,35 @@ func TestCredit_Success(t *testing.T) {
 	amount, _ := decimal.NewFromString("50")
 	zero := decimal.Zero
 
-	eventRepo.On("GetByTransactionID", ctx, event.TransactionID{Value: "tx-1"}).Return(nil, gorm.ErrRecordNotFound)
-	snapshotRepo.On("GetLatestByUserID", ctx, testUserID).Return(snap, nil)
-	snapshotRepo.On("UpdateVersion", ctx, snap).Return(nil)
-
-	createdEvent := &event.Event{
-		ID:            event.ID{Value: "ev-new"},
-		UserID:        testUserID,
-		Type:          event.TypeCredit,
-		Amount:        event.Amount{Value: amount},
-		TransactionID: event.TransactionID{Value: "tx-1"},
-	}
-	eventRepo.On("Create", ctx, mock.AnythingOfType("*event.Event")).Return(createdEvent, nil)
-	eventRepo.On("SumSinceSnapshot", ctx, testUserID, snap.ID).Return(amount, zero, nil)
-	cache.On("Invalidate", ctx, testUserID).Return(nil)
+	eventRepo.On("GetByTransactionID", ctx, dto.EventGetByTxIDRequest{TransactionID: event.TransactionID{Value: "tx-1"}}).
+		Return(dto.EventGetByTxIDResponse{}, gorm.ErrRecordNotFound)
+	snapshotRepo.On("GetLatestByUserID", ctx, dto.SnapshotGetLatestByUserIDRequest{UserID: user.ID{Value: testUserID}}).
+		Return(dto.SnapshotGetLatestByUserIDResponse{Snapshot: *snap}, nil)
+	snapshotRepo.On("UpdateVersion", ctx, dto.SnapshotUpdateVersionRequest{Snapshot: *snap}).
+		Return(nil)
+	eventRepo.On("Create", ctx, mock.AnythingOfType("dto.EventCreateRequest")).
+		Return(dto.EventCreateResponse{Event: event.Event{
+			ID:            event.ID{Value: "ev-new"},
+			UserID:        user.ID{Value: testUserID},
+			Type:          event.TypeCredit,
+			Amount:        event.Amount{Value: amount},
+			TransactionID: event.TransactionID{Value: "tx-1"},
+		}}, nil)
+	eventRepo.On("SumSinceSnapshot", ctx, dto.EventSumSinceSnapshotRequest{UserID: user.ID{Value: testUserID}, SnapshotID: snap.ID}).
+		Return(dto.EventSumSinceSnapshotResponse{Available: amount, Frozen: zero}, nil)
+	cache.On("Invalidate", ctx, dto.BalanceCacheInvalidateRequest{UserID: user.ID{Value: testUserID}}).
+		Return(nil)
 
 	svc := newService(eventRepo, snapshotRepo, userRepo, cache, freeze)
-	resp, err := svc.Credit(ctx, balanceservice.CreditRequest{
-		UserID:        testUserID,
+	resp, err := svc.Credit(ctx, &balanceservice.CreditRequest{
+		UserID:        user.ID{Value: testUserID},
 		Amount:        amount,
-		TransactionID: "tx-1",
+		TransactionID: event.TransactionID{Value: "tx-1"},
 	})
 
 	require.NoError(t, err)
-	// balance = snap(100) + delta(50) - frozen(0) = 150
 	assert.Equal(t, "150", resp.NewBalance.String())
-	assert.Equal(t, "tx-1", resp.TransactionID)
+	assert.Equal(t, "tx-1", resp.TransactionID.Value)
 }
 
 func TestDebit_InsufficientFunds(t *testing.T) {
@@ -142,20 +149,24 @@ func TestDebit_InsufficientFunds(t *testing.T) {
 	freeze := &mocks.FreezeScheduler{}
 
 	snap := makeSnap("100")
-	u := makeUser("0") // no overdraft
+	u := makeUser("0")
 	debitAmount, _ := decimal.NewFromString("150")
 	zero := decimal.Zero
 
-	eventRepo.On("GetByTransactionID", ctx, event.TransactionID{Value: "tx-debit"}).Return(nil, gorm.ErrRecordNotFound)
-	snapshotRepo.On("GetLatestByUserID", ctx, testUserID).Return(snap, nil)
-	userRepo.On("GetByID", ctx, user.ID{Value: testUserID}).Return(u, nil)
-	eventRepo.On("SumSinceSnapshot", ctx, testUserID, snap.ID).Return(zero, zero, nil)
+	eventRepo.On("GetByTransactionID", ctx, dto.EventGetByTxIDRequest{TransactionID: event.TransactionID{Value: "tx-debit"}}).
+		Return(dto.EventGetByTxIDResponse{}, gorm.ErrRecordNotFound)
+	snapshotRepo.On("GetLatestByUserID", ctx, dto.SnapshotGetLatestByUserIDRequest{UserID: user.ID{Value: testUserID}}).
+		Return(dto.SnapshotGetLatestByUserIDResponse{Snapshot: *snap}, nil)
+	userRepo.On("GetByID", ctx, dto.UserGetByIDRequest{ID: user.ID{Value: testUserID}}).
+		Return(dto.UserGetByIDResponse{User: *u}, nil)
+	eventRepo.On("SumSinceSnapshot", ctx, dto.EventSumSinceSnapshotRequest{UserID: user.ID{Value: testUserID}, SnapshotID: snap.ID}).
+		Return(dto.EventSumSinceSnapshotResponse{Available: zero, Frozen: zero}, nil)
 
 	svc := newService(eventRepo, snapshotRepo, userRepo, cache, freeze)
-	_, err := svc.Debit(ctx, balanceservice.DebitRequest{
-		UserID:        testUserID,
+	_, err := svc.Debit(ctx, &balanceservice.DebitRequest{
+		UserID:        user.ID{Value: testUserID},
 		Amount:        debitAmount,
-		TransactionID: "tx-debit",
+		TransactionID: event.TransactionID{Value: "tx-debit"},
 	})
 
 	assert.ErrorIs(t, err, balanceservice.ErrInsufficientFunds)
@@ -171,27 +182,34 @@ func TestDebit_WithinOverdraft(t *testing.T) {
 	freeze := &mocks.FreezeScheduler{}
 
 	snap := makeSnap("100")
-	u := makeUser("50")                            // overdraft 50, so can go to -50
-	debitAmount, _ := decimal.NewFromString("120") // 100 - 120 = -20, within -50 limit
+	u := makeUser("50")
+	debitAmount, _ := decimal.NewFromString("120")
 	zero := decimal.Zero
 
-	eventRepo.On("GetByTransactionID", ctx, event.TransactionID{Value: "tx-overdraft"}).Return(nil, gorm.ErrRecordNotFound)
-	snapshotRepo.On("GetLatestByUserID", ctx, testUserID).Return(snap, nil)
-	userRepo.On("GetByID", ctx, user.ID{Value: testUserID}).Return(u, nil)
-	eventRepo.On("SumSinceSnapshot", ctx, testUserID, snap.ID).Return(zero, zero, nil)
-	snapshotRepo.On("UpdateVersion", ctx, snap).Return(nil)
-	eventRepo.On("Create", ctx, mock.AnythingOfType("*event.Event")).Return(&event.Event{
-		UserID:        testUserID,
-		Amount:        event.Amount{Value: debitAmount.Neg()},
-		TransactionID: event.TransactionID{Value: "tx-overdraft"},
-	}, nil)
-	cache.On("Invalidate", ctx, testUserID).Return(nil)
+	eventRepo.On("GetByTransactionID", ctx, dto.EventGetByTxIDRequest{TransactionID: event.TransactionID{Value: "tx-overdraft"}}).
+		Return(dto.EventGetByTxIDResponse{}, gorm.ErrRecordNotFound)
+	snapshotRepo.On("GetLatestByUserID", ctx, dto.SnapshotGetLatestByUserIDRequest{UserID: user.ID{Value: testUserID}}).
+		Return(dto.SnapshotGetLatestByUserIDResponse{Snapshot: *snap}, nil)
+	userRepo.On("GetByID", ctx, dto.UserGetByIDRequest{ID: user.ID{Value: testUserID}}).
+		Return(dto.UserGetByIDResponse{User: *u}, nil)
+	eventRepo.On("SumSinceSnapshot", ctx, dto.EventSumSinceSnapshotRequest{UserID: user.ID{Value: testUserID}, SnapshotID: snap.ID}).
+		Return(dto.EventSumSinceSnapshotResponse{Available: zero, Frozen: zero}, nil)
+	snapshotRepo.On("UpdateVersion", ctx, dto.SnapshotUpdateVersionRequest{Snapshot: *snap}).
+		Return(nil)
+	eventRepo.On("Create", ctx, mock.AnythingOfType("dto.EventCreateRequest")).
+		Return(dto.EventCreateResponse{Event: event.Event{
+			UserID:        user.ID{Value: testUserID},
+			Amount:        event.Amount{Value: debitAmount.Neg()},
+			TransactionID: event.TransactionID{Value: "tx-overdraft"},
+		}}, nil)
+	cache.On("Invalidate", ctx, dto.BalanceCacheInvalidateRequest{UserID: user.ID{Value: testUserID}}).
+		Return(nil)
 
 	svc := newService(eventRepo, snapshotRepo, userRepo, cache, freeze)
-	resp, err := svc.Debit(ctx, balanceservice.DebitRequest{
-		UserID:        testUserID,
+	resp, err := svc.Debit(ctx, &balanceservice.DebitRequest{
+		UserID:        user.ID{Value: testUserID},
 		Amount:        debitAmount,
-		TransactionID: "tx-overdraft",
+		TransactionID: event.TransactionID{Value: "tx-overdraft"},
 	})
 
 	require.NoError(t, err)
@@ -209,19 +227,23 @@ func TestDebit_ExceedsOverdraft(t *testing.T) {
 
 	snap := makeSnap("100")
 	u := makeUser("50")
-	debitAmount, _ := decimal.NewFromString("200") // 100 - 200 = -100, exceeds -50 limit
+	debitAmount, _ := decimal.NewFromString("200")
 	zero := decimal.Zero
 
-	eventRepo.On("GetByTransactionID", ctx, event.TransactionID{Value: "tx-exceed"}).Return(nil, gorm.ErrRecordNotFound)
-	snapshotRepo.On("GetLatestByUserID", ctx, testUserID).Return(snap, nil)
-	userRepo.On("GetByID", ctx, user.ID{Value: testUserID}).Return(u, nil)
-	eventRepo.On("SumSinceSnapshot", ctx, testUserID, snap.ID).Return(zero, zero, nil)
+	eventRepo.On("GetByTransactionID", ctx, dto.EventGetByTxIDRequest{TransactionID: event.TransactionID{Value: "tx-exceed"}}).
+		Return(dto.EventGetByTxIDResponse{}, gorm.ErrRecordNotFound)
+	snapshotRepo.On("GetLatestByUserID", ctx, dto.SnapshotGetLatestByUserIDRequest{UserID: user.ID{Value: testUserID}}).
+		Return(dto.SnapshotGetLatestByUserIDResponse{Snapshot: *snap}, nil)
+	userRepo.On("GetByID", ctx, dto.UserGetByIDRequest{ID: user.ID{Value: testUserID}}).
+		Return(dto.UserGetByIDResponse{User: *u}, nil)
+	eventRepo.On("SumSinceSnapshot", ctx, dto.EventSumSinceSnapshotRequest{UserID: user.ID{Value: testUserID}, SnapshotID: snap.ID}).
+		Return(dto.EventSumSinceSnapshotResponse{Available: zero, Frozen: zero}, nil)
 
 	svc := newService(eventRepo, snapshotRepo, userRepo, cache, freeze)
-	_, err := svc.Debit(ctx, balanceservice.DebitRequest{
-		UserID:        testUserID,
+	_, err := svc.Debit(ctx, &balanceservice.DebitRequest{
+		UserID:        user.ID{Value: testUserID},
 		Amount:        debitAmount,
-		TransactionID: "tx-exceed",
+		TransactionID: event.TransactionID{Value: "tx-exceed"},
 	})
 
 	assert.ErrorIs(t, err, balanceservice.ErrInsufficientFunds)
@@ -241,29 +263,36 @@ func TestFreeze_Success(t *testing.T) {
 	freezeAmount, _ := decimal.NewFromString("30")
 	zero := decimal.Zero
 
-	eventRepo.On("GetByTransactionID", ctx, event.TransactionID{Value: "tx-freeze"}).Return(nil, gorm.ErrRecordNotFound)
-	snapshotRepo.On("GetLatestByUserID", ctx, testUserID).Return(snap, nil)
-	userRepo.On("GetByID", ctx, user.ID{Value: testUserID}).Return(u, nil)
-	eventRepo.On("SumSinceSnapshot", ctx, testUserID, snap.ID).Return(zero, zero, nil)
-	snapshotRepo.On("UpdateVersion", ctx, snap).Return(nil)
-	eventRepo.On("Create", ctx, mock.AnythingOfType("*event.Event")).Return(&event.Event{
-		UserID:        testUserID,
-		Amount:        event.Amount{Value: freezeAmount},
-		TransactionID: event.TransactionID{Value: "tx-freeze"},
-	}, nil)
-	cache.On("Invalidate", ctx, testUserID).Return(nil)
+	eventRepo.On("GetByTransactionID", ctx, dto.EventGetByTxIDRequest{TransactionID: event.TransactionID{Value: "tx-freeze"}}).
+		Return(dto.EventGetByTxIDResponse{}, gorm.ErrRecordNotFound)
+	snapshotRepo.On("GetLatestByUserID", ctx, dto.SnapshotGetLatestByUserIDRequest{UserID: user.ID{Value: testUserID}}).
+		Return(dto.SnapshotGetLatestByUserIDResponse{Snapshot: *snap}, nil)
+	userRepo.On("GetByID", ctx, dto.UserGetByIDRequest{ID: user.ID{Value: testUserID}}).
+		Return(dto.UserGetByIDResponse{User: *u}, nil)
+	eventRepo.On("SumSinceSnapshot", ctx, dto.EventSumSinceSnapshotRequest{UserID: user.ID{Value: testUserID}, SnapshotID: snap.ID}).
+		Return(dto.EventSumSinceSnapshotResponse{Available: zero, Frozen: zero}, nil)
+	snapshotRepo.On("UpdateVersion", ctx, dto.SnapshotUpdateVersionRequest{Snapshot: *snap}).
+		Return(nil)
+	eventRepo.On("Create", ctx, mock.AnythingOfType("dto.EventCreateRequest")).
+		Return(dto.EventCreateResponse{Event: event.Event{
+			UserID:        user.ID{Value: testUserID},
+			Amount:        event.Amount{Value: freezeAmount},
+			TransactionID: event.TransactionID{Value: "tx-freeze"},
+		}}, nil)
+	cache.On("Invalidate", ctx, dto.BalanceCacheInvalidateRequest{UserID: user.ID{Value: testUserID}}).
+		Return(nil)
 
 	svc := newService(eventRepo, snapshotRepo, userRepo, cache, freezeSched)
-	resp, err := svc.Freeze(ctx, balanceservice.FreezeRequest{
-		UserID:               testUserID,
+	resp, err := svc.Freeze(ctx, &balanceservice.FreezeRequest{
+		UserID:               user.ID{Value: testUserID},
 		Amount:               freezeAmount,
-		TransactionID:        "tx-freeze",
+		TransactionID:        event.TransactionID{Value: "tx-freeze"},
 		FreezeTimeoutSeconds: 0,
 	})
 
 	require.NoError(t, err)
 	assert.Equal(t, "30", resp.FrozenAmount.String())
-	assert.Equal(t, "tx-freeze", resp.TransactionID)
+	assert.Equal(t, "tx-freeze", resp.TransactionID.Value)
 }
 
 func TestFreeze_WithTimeout(t *testing.T) {
@@ -280,24 +309,32 @@ func TestFreeze_WithTimeout(t *testing.T) {
 	freezeAmount, _ := decimal.NewFromString("30")
 	zero := decimal.Zero
 
-	eventRepo.On("GetByTransactionID", ctx, event.TransactionID{Value: "tx-freeze-ttl"}).Return(nil, gorm.ErrRecordNotFound)
-	snapshotRepo.On("GetLatestByUserID", ctx, testUserID).Return(snap, nil)
-	userRepo.On("GetByID", ctx, user.ID{Value: testUserID}).Return(u, nil)
-	eventRepo.On("SumSinceSnapshot", ctx, testUserID, snap.ID).Return(zero, zero, nil)
-	snapshotRepo.On("UpdateVersion", ctx, snap).Return(nil)
-	eventRepo.On("Create", ctx, mock.AnythingOfType("*event.Event")).Return(&event.Event{
-		UserID:        testUserID,
-		Amount:        event.Amount{Value: freezeAmount},
-		TransactionID: event.TransactionID{Value: "tx-freeze-ttl"},
-	}, nil)
-	freezeSched.On("Schedule", ctx, "tx-freeze-ttl", int64(10)).Return(nil)
-	cache.On("Invalidate", ctx, testUserID).Return(nil)
+	eventRepo.On("GetByTransactionID", ctx, dto.EventGetByTxIDRequest{TransactionID: event.TransactionID{Value: "tx-freeze-ttl"}}).
+		Return(dto.EventGetByTxIDResponse{}, gorm.ErrRecordNotFound)
+	snapshotRepo.On("GetLatestByUserID", ctx, dto.SnapshotGetLatestByUserIDRequest{UserID: user.ID{Value: testUserID}}).
+		Return(dto.SnapshotGetLatestByUserIDResponse{Snapshot: *snap}, nil)
+	userRepo.On("GetByID", ctx, dto.UserGetByIDRequest{ID: user.ID{Value: testUserID}}).
+		Return(dto.UserGetByIDResponse{User: *u}, nil)
+	eventRepo.On("SumSinceSnapshot", ctx, dto.EventSumSinceSnapshotRequest{UserID: user.ID{Value: testUserID}, SnapshotID: snap.ID}).
+		Return(dto.EventSumSinceSnapshotResponse{Available: zero, Frozen: zero}, nil)
+	snapshotRepo.On("UpdateVersion", ctx, dto.SnapshotUpdateVersionRequest{Snapshot: *snap}).
+		Return(nil)
+	eventRepo.On("Create", ctx, mock.AnythingOfType("dto.EventCreateRequest")).
+		Return(dto.EventCreateResponse{Event: event.Event{
+			UserID:        user.ID{Value: testUserID},
+			Amount:        event.Amount{Value: freezeAmount},
+			TransactionID: event.TransactionID{Value: "tx-freeze-ttl"},
+		}}, nil)
+	freezeSched.On("Schedule", ctx, dto.FreezeScheduleRequest{TransactionID: event.TransactionID{Value: "tx-freeze-ttl"}, TTLSeconds: int64(10)}).
+		Return(nil)
+	cache.On("Invalidate", ctx, dto.BalanceCacheInvalidateRequest{UserID: user.ID{Value: testUserID}}).
+		Return(nil)
 
 	svc := newService(eventRepo, snapshotRepo, userRepo, cache, freezeSched)
-	resp, err := svc.Freeze(ctx, balanceservice.FreezeRequest{
-		UserID:               testUserID,
+	resp, err := svc.Freeze(ctx, &balanceservice.FreezeRequest{
+		UserID:               user.ID{Value: testUserID},
 		Amount:               freezeAmount,
-		TransactionID:        "tx-freeze-ttl",
+		TransactionID:        event.TransactionID{Value: "tx-freeze-ttl"},
 		FreezeTimeoutSeconds: 10,
 	})
 
@@ -317,35 +354,40 @@ func TestUnfreeze_Success(t *testing.T) {
 
 	freezeAmount, _ := decimal.NewFromString("30")
 
-	freezeEvent := &event.Event{
+	freezeEvent := event.Event{
 		ID:            event.ID{Value: "ev-freeze"},
-		UserID:        testUserID,
+		UserID:        user.ID{Value: testUserID},
 		Type:          event.TypeFreezeHold,
 		Amount:        event.Amount{Value: freezeAmount},
 		TransactionID: event.TransactionID{Value: "tx-freeze"},
 	}
 
-	releaseKey := "tx-freeze:release"
+	releaseKey := event.TransactionID{Value: "tx-freeze:release"}
 
-	eventRepo.On("GetByTransactionID", ctx, event.TransactionID{Value: releaseKey}).Return(nil, gorm.ErrRecordNotFound)
-	eventRepo.On("GetByTransactionID", ctx, event.TransactionID{Value: "tx-freeze"}).Return(freezeEvent, nil)
-	eventRepo.On("Create", ctx, mock.AnythingOfType("*event.Event")).Return(&event.Event{
-		UserID:        testUserID,
-		Amount:        event.Amount{Value: freezeAmount.Neg()},
-		TransactionID: event.TransactionID{Value: releaseKey},
-	}, nil)
-	freezeSched.On("Cancel", ctx, "tx-freeze").Return(nil)
-	cache.On("Invalidate", ctx, testUserID).Return(nil)
+	eventRepo.On("GetByTransactionID", ctx, dto.EventGetByTxIDRequest{TransactionID: releaseKey}).
+		Return(dto.EventGetByTxIDResponse{}, gorm.ErrRecordNotFound)
+	eventRepo.On("GetByTransactionID", ctx, dto.EventGetByTxIDRequest{TransactionID: event.TransactionID{Value: "tx-freeze"}}).
+		Return(dto.EventGetByTxIDResponse{Event: freezeEvent}, nil)
+	eventRepo.On("Create", ctx, mock.AnythingOfType("dto.EventCreateRequest")).
+		Return(dto.EventCreateResponse{Event: event.Event{
+			UserID:        user.ID{Value: testUserID},
+			Amount:        event.Amount{Value: freezeAmount.Neg()},
+			TransactionID: releaseKey,
+		}}, nil)
+	freezeSched.On("Cancel", ctx, dto.FreezeCancelRequest{TransactionID: event.TransactionID{Value: "tx-freeze"}}).
+		Return(nil)
+	cache.On("Invalidate", ctx, dto.BalanceCacheInvalidateRequest{UserID: user.ID{Value: testUserID}}).
+		Return(nil)
 
 	svc := newService(eventRepo, snapshotRepo, userRepo, cache, freezeSched)
-	resp, err := svc.Unfreeze(ctx, balanceservice.UnfreezeRequest{
-		UserID:        testUserID,
-		TransactionID: "tx-freeze",
+	resp, err := svc.Unfreeze(ctx, &balanceservice.UnfreezeRequest{
+		UserID:        user.ID{Value: testUserID},
+		TransactionID: event.TransactionID{Value: "tx-freeze"},
 	})
 
 	require.NoError(t, err)
 	assert.Equal(t, "30", resp.UnfrozenAmount.String())
-	assert.Equal(t, "tx-freeze", resp.TransactionID)
+	assert.Equal(t, "tx-freeze", resp.TransactionID.Value)
 }
 
 func TestUnfreeze_Idempotency(t *testing.T) {
@@ -358,22 +400,23 @@ func TestUnfreeze_Idempotency(t *testing.T) {
 	freezeSched := &mocks.FreezeScheduler{}
 
 	freezeAmount, _ := decimal.NewFromString("30")
-	releaseKey := "tx-freeze:release"
+	releaseKey := event.TransactionID{Value: "tx-freeze:release"}
 
-	existingRelease := &event.Event{
+	existingRelease := event.Event{
 		ID:            event.ID{Value: "ev-release"},
-		UserID:        testUserID,
+		UserID:        user.ID{Value: testUserID},
 		Type:          event.TypeFreezeRelease,
 		Amount:        event.Amount{Value: freezeAmount.Neg()},
-		TransactionID: event.TransactionID{Value: releaseKey},
+		TransactionID: releaseKey,
 	}
 
-	eventRepo.On("GetByTransactionID", ctx, event.TransactionID{Value: releaseKey}).Return(existingRelease, nil)
+	eventRepo.On("GetByTransactionID", ctx, dto.EventGetByTxIDRequest{TransactionID: releaseKey}).
+		Return(dto.EventGetByTxIDResponse{Event: existingRelease}, nil)
 
 	svc := newService(eventRepo, snapshotRepo, userRepo, cache, freezeSched)
-	resp, err := svc.Unfreeze(ctx, balanceservice.UnfreezeRequest{
-		UserID:        testUserID,
-		TransactionID: "tx-freeze",
+	resp, err := svc.Unfreeze(ctx, &balanceservice.UnfreezeRequest{
+		UserID:        user.ID{Value: testUserID},
+		TransactionID: event.TransactionID{Value: "tx-freeze"},
 	})
 
 	require.NoError(t, err)
@@ -393,10 +436,11 @@ func TestGetBalance_CacheHit(t *testing.T) {
 	available, _ := decimal.NewFromString("200")
 	frozen, _ := decimal.NewFromString("50")
 
-	cache.On("Get", ctx, testUserID).Return(available, frozen, true, nil)
+	cache.On("Get", ctx, dto.BalanceCacheGetRequest{UserID: user.ID{Value: testUserID}}).
+		Return(dto.BalanceCacheGetResponse{Available: available, Frozen: frozen, Found: true}, nil)
 
 	svc := newService(eventRepo, snapshotRepo, userRepo, cache, freeze)
-	resp, err := svc.GetBalance(ctx, balanceservice.GetBalanceRequest{UserID: testUserID})
+	resp, err := svc.GetBalance(ctx, &balanceservice.GetBalanceRequest{UserID: user.ID{Value: testUserID}})
 
 	require.NoError(t, err)
 	assert.Equal(t, "200", resp.Available.String())
@@ -418,16 +462,19 @@ func TestGetBalance_CacheMiss(t *testing.T) {
 	frozen, _ := decimal.NewFromString("20")
 	zero := decimal.Zero
 
-	cache.On("Get", ctx, testUserID).Return(zero, zero, false, nil)
-	snapshotRepo.On("GetLatestByUserID", ctx, testUserID).Return(snap, nil)
-	eventRepo.On("SumSinceSnapshot", ctx, testUserID, snap.ID).Return(delta, frozen, nil)
-	cache.On("Set", ctx, testUserID, decimal.NewFromInt(130), frozen).Return(nil)
+	cache.On("Get", ctx, dto.BalanceCacheGetRequest{UserID: user.ID{Value: testUserID}}).
+		Return(dto.BalanceCacheGetResponse{Available: zero, Frozen: zero, Found: false}, nil)
+	snapshotRepo.On("GetLatestByUserID", ctx, dto.SnapshotGetLatestByUserIDRequest{UserID: user.ID{Value: testUserID}}).
+		Return(dto.SnapshotGetLatestByUserIDResponse{Snapshot: *snap}, nil)
+	eventRepo.On("SumSinceSnapshot", ctx, dto.EventSumSinceSnapshotRequest{UserID: user.ID{Value: testUserID}, SnapshotID: snap.ID}).
+		Return(dto.EventSumSinceSnapshotResponse{Available: delta, Frozen: frozen}, nil)
+	cache.On("Set", ctx, dto.BalanceCacheSetRequest{UserID: user.ID{Value: testUserID}, Available: decimal.NewFromInt(130), Frozen: frozen}).
+		Return(nil)
 
 	svc := newService(eventRepo, snapshotRepo, userRepo, cache, freeze)
-	resp, err := svc.GetBalance(ctx, balanceservice.GetBalanceRequest{UserID: testUserID})
+	resp, err := svc.GetBalance(ctx, &balanceservice.GetBalanceRequest{UserID: user.ID{Value: testUserID}})
 
 	require.NoError(t, err)
-	// available = 100 + 50 - 20 = 130
 	assert.Equal(t, "130", resp.Available.String())
 	assert.Equal(t, "20", resp.Frozen.String())
 }

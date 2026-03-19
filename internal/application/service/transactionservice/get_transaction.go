@@ -3,6 +3,8 @@ package transactionservice
 import (
 	"context"
 
+	"github.com/dehwyy/tracerfx/pkg/tracer/dspan"
+	"github.com/dehwyy/x-balance/internal/application/dto"
 	"github.com/dehwyy/x-balance/internal/domain/entity/event"
 )
 
@@ -17,12 +19,18 @@ type GetTransactionResponse struct {
 
 func (s *Service) GetTransaction(
 	ctx context.Context,
-	req GetTransactionRequest,
+	req *GetTransactionRequest,
 ) (*GetTransactionResponse, error) {
-	e, err := s.eventRepo.GetByID(ctx, event.ID{Value: req.TxID})
+	ctx, span := dspan.Start(ctx, "transactionservice.Service.GetTransaction", dspan.Attr("req", req))
+	defer span.End()
+
+	getResp, err := s.eventRepo.GetByID(ctx, dto.EventGetByIDRequest{ID: event.ID{Value: req.TxID}})
 	if err != nil {
-		return nil, err
+		return nil, span.Err(err)
 	}
 
-	return &GetTransactionResponse{Event: e}, nil
+	e := getResp.Event
+	response := &GetTransactionResponse{Event: &e}
+	span.WithAttribute("response", response)
+	return response, nil
 }

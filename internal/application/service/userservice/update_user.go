@@ -3,7 +3,9 @@ package userservice
 import (
 	"context"
 
-	"github.com/dehwyy/x-balance/internal/domain/entity/user"
+	"github.com/dehwyy/tracerfx/pkg/tracer/dspan"
+	"github.com/dehwyy/x-balance/internal/application/dto"
+	user "github.com/dehwyy/x-balance/internal/domain/entity/user"
 	"github.com/shopspring/decimal"
 )
 
@@ -19,22 +21,32 @@ type UpdateUserResponse struct {
 
 func (s *Service) UpdateUser(
 	ctx context.Context,
-	req UpdateUserRequest,
+	req *UpdateUserRequest,
 ) (*UpdateUserResponse, error) {
-	var u *user.User
+	ctx, span := dspan.Start(ctx, "userservice.Service.UpdateUser", dspan.Attr("req", req))
+	defer span.End()
+
+	var u user.User
 
 	err := s.tx.Do(ctx, "userservice.UpdateUser", func(ctx context.Context) error {
-		var err error
-		u, err = s.userRepo.Update(ctx, &user.User{
-			ID:             user.ID{Value: req.ID},
-			Name:           user.Name{Value: req.Name},
-			OverdraftLimit: user.OverdraftLimit{Value: req.OverdraftLimit},
+		updateResp, err := s.userRepo.Update(ctx, dto.UserUpdateRequest{
+			User: user.User{
+				ID:             user.ID{Value: req.ID},
+				Name:           user.Name{Value: req.Name},
+				OverdraftLimit: user.OverdraftLimit{Value: req.OverdraftLimit},
+			},
 		})
-		return err
+		if err != nil {
+			return err
+		}
+		u = updateResp.User
+		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, span.Err(err)
 	}
 
-	return &UpdateUserResponse{User: u}, nil
+	response := &UpdateUserResponse{User: &u}
+	span.WithAttribute("response", response)
+	return response, nil
 }

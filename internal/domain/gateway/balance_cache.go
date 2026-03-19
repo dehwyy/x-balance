@@ -3,25 +3,23 @@ package gateway
 import (
 	"context"
 
-	"github.com/shopspring/decimal"
+	"github.com/dehwyy/x-balance/internal/application/dto"
 )
 
 //go:generate mockery --name=BalanceCache --output=../../../pkg/test/mocks --outpkg=mocks
 type BalanceCache interface {
 	Get(
 		ctx context.Context,
-		userID string,
-	) (available decimal.Decimal, frozen decimal.Decimal, found bool, err error)
+		req dto.BalanceCacheGetRequest,
+	) (dto.BalanceCacheGetResponse, error)
 
 	Set(
 		ctx context.Context,
-		userID string,
-		available decimal.Decimal,
-		frozen decimal.Decimal,
+		req dto.BalanceCacheSetRequest,
 	) error
 
 	Invalidate(
 		ctx context.Context,
-		userID string,
+		req dto.BalanceCacheInvalidateRequest,
 	) error
 }

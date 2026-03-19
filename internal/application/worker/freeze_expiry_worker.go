@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/dehwyy/x-balance/internal/application/service/balanceservice"
+	"github.com/dehwyy/x-balance/internal/domain/entity/event"
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog"
 )
@@ -53,15 +54,17 @@ func (w *FreezeExpiryWorker) handleExpiry(ctx context.Context, key string) {
 
 	txID := strings.TrimPrefix(key, prefix)
 
-	userID, err := w.balanceSvc.GetUserIDByTransactionID(ctx, txID)
+	userIDResp, err := w.balanceSvc.GetUserIDByTransactionID(ctx, &balanceservice.GetUserIDByTransactionIDRequest{
+		TransactionID: event.TransactionID{Value: txID},
+	})
 	if err != nil {
 		w.log.Error().Err(err).Str("tx_id", txID).Msg("failed to find user for freeze expiry")
 		return
 	}
 
-	_, err = w.balanceSvc.Unfreeze(ctx, balanceservice.UnfreezeRequest{
-		UserID:        userID,
-		TransactionID: txID,
+	_, err = w.balanceSvc.Unfreeze(ctx, &balanceservice.UnfreezeRequest{
+		UserID:        userIDResp.UserID,
+		TransactionID: event.TransactionID{Value: txID},
 	})
 	if err != nil {
 		w.log.Error().Err(err).Str("tx_id", txID).Msg("failed to auto-unfreeze")

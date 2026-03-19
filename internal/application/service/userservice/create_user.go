@@ -3,7 +3,9 @@ package userservice
 import (
 	"context"
 
-	"github.com/dehwyy/x-balance/internal/domain/entity/user"
+	"github.com/dehwyy/tracerfx/pkg/tracer/dspan"
+	"github.com/dehwyy/x-balance/internal/application/dto"
+	user "github.com/dehwyy/x-balance/internal/domain/entity/user"
 	"github.com/shopspring/decimal"
 )
 
@@ -18,21 +20,29 @@ type CreateUserResponse struct {
 
 func (s *Service) CreateUser(
 	ctx context.Context,
-	req CreateUserRequest,
+	req *CreateUserRequest,
 ) (*CreateUserResponse, error) {
-	var u *user.User
+	ctx, span := dspan.Start(ctx, "userservice.Service.CreateUser", dspan.Attr("req", req))
+	defer span.End()
+
+	var u user.User
 
 	err := s.tx.Do(ctx, "userservice.CreateUser", func(ctx context.Context) error {
-		var err error
-		u, err = s.userRepo.Create(ctx, &user.User{
+		createResp, err := s.userRepo.Create(ctx, dto.UserCreateRequest{
 			Name:           user.Name{Value: req.Name},
 			OverdraftLimit: user.OverdraftLimit{Value: req.OverdraftLimit},
 		})
-		return err
+		if err != nil {
+			return err
+		}
+		u = createResp.User
+		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, span.Err(err)
 	}
 
-	return &CreateUserResponse{User: u}, nil
+	response := &CreateUserResponse{User: &u}
+	span.WithAttribute("response", response)
+	return response, nil
 }

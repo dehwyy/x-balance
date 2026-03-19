@@ -3,28 +3,28 @@ package repository
 import (
 	"context"
 
-	"github.com/dehwyy/x-balance/internal/domain/entity/user"
+	"github.com/dehwyy/x-balance/internal/application/dto"
 )
 
 //go:generate mockery --name=UserRepository --output=../../../pkg/test/mocks --outpkg=mocks
 type UserRepository interface {
 	Create(
 		ctx context.Context,
-		u *user.User,
-	) (*user.User, error)
+		req dto.UserCreateRequest,
+	) (dto.UserCreateResponse, error)
 
 	GetByID(
 		ctx context.Context,
-		id user.ID,
-	) (*user.User, error)
+		req dto.UserGetByIDRequest,
+	) (dto.UserGetByIDResponse, error)
 
 	Update(
 		ctx context.Context,
-		u *user.User,
-	) (*user.User, error)
+		req dto.UserUpdateRequest,
+	) (dto.UserUpdateResponse, error)
 
 	Delete(
 		ctx context.Context,
-		id user.ID,
+		req dto.UserDeleteRequest,
 	) error
 }

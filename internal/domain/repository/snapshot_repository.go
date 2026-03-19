@@ -3,23 +3,23 @@ package repository
 import (
 	"context"
 
-	"github.com/dehwyy/x-balance/internal/domain/entity/snapshot"
+	"github.com/dehwyy/x-balance/internal/application/dto"
 )
 
 //go:generate mockery --name=SnapshotRepository --output=../../../pkg/test/mocks --outpkg=mocks
 type SnapshotRepository interface {
 	Create(
 		ctx context.Context,
-		s *snapshot.Snapshot,
-	) (*snapshot.Snapshot, error)
+		req dto.SnapshotCreateRequest,
+	) (dto.SnapshotCreateResponse, error)
 
 	GetLatestByUserID(
 		ctx context.Context,
-		userID string,
-	) (*snapshot.Snapshot, error)
+		req dto.SnapshotGetLatestByUserIDRequest,
+	) (dto.SnapshotGetLatestByUserIDResponse, error)
 
 	UpdateVersion(
 		ctx context.Context,
-		s *snapshot.Snapshot,
+		req dto.SnapshotUpdateVersionRequest,
 	) error
 }
