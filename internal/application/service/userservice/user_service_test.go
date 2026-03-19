@@ -38,7 +38,7 @@ func TestCreateUser_Success(t *testing.T) {
 		OverdraftLimit: user.OverdraftLimit{Value: overdraft},
 	}
 
-	userRepo.On("Create", ctx, mock.AnythingOfType("dto.UserCreateRequest")).
+	userRepo.On("Create", mock.Anything, mock.AnythingOfType("dto.UserCreateRequest")).
 		Return(dto.UserCreateResponse{User: expectedUser}, nil)
 
 	svc := newUserService(userRepo)
@@ -59,7 +59,7 @@ func TestCreateUser_RepositoryError(t *testing.T) {
 	overdraft, _ := decimal.NewFromString("100")
 
 	expectedErr := errors.New("repository error")
-	userRepo.On("Create", ctx, mock.AnythingOfType("dto.UserCreateRequest")).
+	userRepo.On("Create", mock.Anything, mock.AnythingOfType("dto.UserCreateRequest")).
 		Return(dto.UserCreateResponse{}, expectedErr)
 
 	svc := newUserService(userRepo)
@@ -84,7 +84,7 @@ func TestGetUser_Success(t *testing.T) {
 		OverdraftLimit: user.OverdraftLimit{Value: overdraft},
 	}
 
-	userRepo.On("GetByID", ctx, dto.UserGetByIDRequest{ID: user.ID{Value: testUserID}}).
+	userRepo.On("GetByID", mock.Anything, dto.UserGetByIDRequest{ID: user.ID{Value: testUserID}}).
 		Return(dto.UserGetByIDResponse{User: expectedUser}, nil)
 
 	svc := newUserService(userRepo)
@@ -102,7 +102,7 @@ func TestGetUser_NotFound(t *testing.T) {
 
 	userRepo := &mocks.UserRepository{}
 
-	userRepo.On("GetByID", ctx, dto.UserGetByIDRequest{ID: user.ID{Value: testUserID}}).
+	userRepo.On("GetByID", mock.Anything, dto.UserGetByIDRequest{ID: user.ID{Value: testUserID}}).
 		Return(dto.UserGetByIDResponse{}, gorm.ErrRecordNotFound)
 
 	svc := newUserService(userRepo)
@@ -126,7 +126,7 @@ func TestUpdateUser_Success(t *testing.T) {
 		OverdraftLimit: user.OverdraftLimit{Value: overdraft},
 	}
 
-	userRepo.On("Update", ctx, mock.AnythingOfType("dto.UserUpdateRequest")).
+	userRepo.On("Update", mock.Anything, mock.AnythingOfType("dto.UserUpdateRequest")).
 		Return(dto.UserUpdateResponse{User: updatedUser}, nil)
 
 	svc := newUserService(userRepo)
@@ -147,7 +147,7 @@ func TestUpdateUser_NotFound(t *testing.T) {
 	userRepo := &mocks.UserRepository{}
 	overdraft, _ := decimal.NewFromString("200")
 
-	userRepo.On("Update", ctx, mock.AnythingOfType("dto.UserUpdateRequest")).
+	userRepo.On("Update", mock.Anything, mock.AnythingOfType("dto.UserUpdateRequest")).
 		Return(dto.UserUpdateResponse{}, gorm.ErrRecordNotFound)
 
 	svc := newUserService(userRepo)
@@ -166,7 +166,7 @@ func TestDeleteUser_Success(t *testing.T) {
 
 	userRepo := &mocks.UserRepository{}
 
-	userRepo.On("Delete", ctx, dto.UserDeleteRequest{ID: user.ID{Value: testUserID}}).
+	userRepo.On("Delete", mock.Anything, dto.UserDeleteRequest{ID: user.ID{Value: testUserID}}).
 		Return(nil)
 
 	svc := newUserService(userRepo)
@@ -183,7 +183,7 @@ func TestDeleteUser_NotFound(t *testing.T) {
 
 	userRepo := &mocks.UserRepository{}
 
-	userRepo.On("Delete", ctx, dto.UserDeleteRequest{ID: user.ID{Value: testUserID}}).
+	userRepo.On("Delete", mock.Anything, dto.UserDeleteRequest{ID: user.ID{Value: testUserID}}).
 		Return(gorm.ErrRecordNotFound)
 
 	svc := newUserService(userRepo)

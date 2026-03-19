@@ -13,6 +13,7 @@ import (
 	"github.com/dehwyy/x-balance/pkg/test/mocks"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 )
@@ -60,7 +61,7 @@ func TestListTransactions_Success(t *testing.T) {
 		To:         &toTime,
 	}
 
-	eventRepo.On("List", ctx, expectedReq).
+	eventRepo.On("List", mock.Anything, expectedReq).
 		Return(dto.EventListResponse{Events: eventValues, Total: expectedTotal}, nil)
 
 	svc := newTransactionService(eventRepo)
@@ -87,7 +88,7 @@ func TestListTransactions_EmptyResult(t *testing.T) {
 		Pagination: storage.NewPagination(10, 0),
 	}
 
-	eventRepo.On("List", ctx, expectedReq).
+	eventRepo.On("List", mock.Anything, expectedReq).
 		Return(dto.EventListResponse{Events: []event.Event{}, Total: int64(0)}, nil)
 
 	svc := newTransactionService(eventRepo)
@@ -112,7 +113,7 @@ func TestListTransactions_RepositoryError(t *testing.T) {
 		Pagination: storage.NewPagination(10, 0),
 	}
 
-	eventRepo.On("List", ctx, expectedReq).
+	eventRepo.On("List", mock.Anything, expectedReq).
 		Return(dto.EventListResponse{}, gorm.ErrInvalidDB)
 
 	svc := newTransactionService(eventRepo)
@@ -138,7 +139,7 @@ func TestGetTransaction_Success(t *testing.T) {
 		TransactionID: event.TransactionID{Value: "tx-1"},
 	}
 
-	eventRepo.On("GetByID", ctx, dto.EventGetByIDRequest{ID: event.ID{Value: testEventID}}).
+	eventRepo.On("GetByID", mock.Anything, dto.EventGetByIDRequest{ID: event.ID{Value: testEventID}}).
 		Return(dto.EventGetByIDResponse{Event: expectedEvent}, nil)
 
 	svc := newTransactionService(eventRepo)
@@ -157,7 +158,7 @@ func TestGetTransaction_NotFound(t *testing.T) {
 
 	eventRepo := &mocks.EventRepository{}
 
-	eventRepo.On("GetByID", ctx, dto.EventGetByIDRequest{ID: event.ID{Value: testEventID}}).
+	eventRepo.On("GetByID", mock.Anything, dto.EventGetByIDRequest{ID: event.ID{Value: testEventID}}).
 		Return(dto.EventGetByIDResponse{}, gorm.ErrRecordNotFound)
 
 	svc := newTransactionService(eventRepo)
