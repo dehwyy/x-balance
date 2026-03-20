@@ -4,9 +4,11 @@ import (
 	"context"
 
 	"github.com/dehwyy/tracerfx/pkg/tracer/dspan"
+	tlog "github.com/dehwyy/tracerfx/pkg/tracer/log"
+	"github.com/shopspring/decimal"
+
 	"github.com/dehwyy/x-balance/internal/application/dto"
 	user "github.com/dehwyy/x-balance/internal/domain/entity/user"
-	"github.com/shopspring/decimal"
 )
 
 type GetBalanceRequest struct {
@@ -23,18 +25,23 @@ func (s *Service) GetBalance(
 	ctx context.Context,
 	req *GetBalanceRequest,
 ) (*GetBalanceResponse, error) {
-	ctx, span := dspan.Start(ctx, "balanceservice.Service.GetBalance", dspan.Attr("req", req))
+	ctx, span := dspan.Start(
+		ctx,
+		"balanceservice.Service.GetBalance",
+		dspan.Attr("req", req),
+	)
 	defer span.End()
 
-	cacheResp, err := s.balanceCache.Get(ctx, dto.BalanceCacheGetRequest{UserID: req.UserID})
-	if err == nil && cacheResp.Found {
-		response := &GetBalanceResponse{
-			Available: cacheResp.Available,
-			Frozen:    cacheResp.Frozen,
-			Total:     cacheResp.Available.Add(cacheResp.Frozen),
-		}
-		span.WithAttribute("response", response)
-		return response, nil
+	cacheResult, err := s.balanceCache.Get(
+		ctx,
+		dto.BalanceCacheGetRequest{UserID: req.UserID},
+	)
+	if err == nil && cacheResult.Found {
+		return dspan.Response(span, &GetBalanceResponse{
+			Available: cacheResult.Available,
+			Frozen:    cacheResult.Frozen,
+			Total:     cacheResult.Available.Add(cacheResult.Frozen),
+		}), nil
 	}
 
 	available, frozen, err := s.computeBalance(ctx, req.UserID)
@@ -42,33 +49,42 @@ func (s *Service) GetBalance(
 		return nil, span.Err(err)
 	}
 
-	_ = s.balanceCache.Set(ctx, dto.BalanceCacheSetRequest{
-		UserID:    req.UserID,
-		Available: available,
-		Frozen:    frozen,
-	})
+	if err := s.balanceCache.Set(
+		ctx,
+		dto.BalanceCacheSetRequest{
+			UserID:    req.UserID,
+			Available: available,
+			Frozen:    frozen,
+		},
+	); err != nil {
+		tlog.FromContext(ctx).Error("failed to set balance cache", "err", err)
+	}
 
-	response := &GetBalanceResponse{
+	return dspan.Response(span, &GetBalanceResponse{
 		Available: available,
 		Frozen:    frozen,
 		Total:     available.Add(frozen),
-	}
-	span.WithAttribute("response", response)
-	return response, nil
+	}), nil
 }
 
 func (s *Service) computeBalance(ctx context.Context, userID user.ID) (decimal.Decimal, decimal.Decimal, error) {
-	snapResp, err := s.snapshotRepo.GetLatestByUserID(ctx, dto.SnapshotGetLatestByUserIDRequest{UserID: userID})
+	snapshotResult, err := s.snapshotRepo.GetLatestByUserID(
+		ctx,
+		dto.SnapshotGetLatestByUserIDRequest{UserID: userID},
+	)
 	if err != nil {
 		return decimal.Zero, decimal.Zero, err
 	}
-	snap := snapResp.Snapshot
+	snap := snapshotResult.Snapshot
 
-	sumResp, err := s.eventRepo.SumSinceSnapshot(ctx, dto.EventSumSinceSnapshotRequest{UserID: userID, SnapshotID: snap.ID})
+	sumSinceSnapshot, err := s.eventRepo.SumSinceSnapshot(
+		ctx,
+		dto.EventSumSinceSnapshotRequest{UserID: userID, SnapshotID: snap.ID},
+	)
 	if err != nil {
 		return decimal.Zero, decimal.Zero, err
 	}
 
-	available := snap.Balance.Value.Add(sumResp.Available).Sub(sumResp.Frozen)
-	return available, sumResp.Frozen, nil
+	available, frozen := snap.ComputeBalance(sumSinceSnapshot.Available, sumSinceSnapshot.Frozen)
+	return available, frozen, nil
 }

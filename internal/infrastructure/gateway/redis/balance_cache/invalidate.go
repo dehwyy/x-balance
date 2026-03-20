@@ -11,10 +11,17 @@ func (impl *Implementation) Invalidate(
 	ctx context.Context,
 	req dto.BalanceCacheInvalidateRequest,
 ) error {
-	ctx, span := dspan.Start(ctx, "balancecache.Implementation.Invalidate", dspan.Attr("req", req))
+	ctx, span := dspan.Start(
+		ctx,
+		"balancecache.Implementation.Invalidate",
+		dspan.Attr("req", req),
+	)
 	defer span.End()
 
-	if err := impl.client.Del(ctx, balanceKey(req.UserID.Value)).Err(); err != nil {
+	if err := impl.client.Del(
+		ctx,
+		balanceKey(req.UserID.Value),
+	).Err(); err != nil {
 		return span.Err(err)
 	}
 	return nil

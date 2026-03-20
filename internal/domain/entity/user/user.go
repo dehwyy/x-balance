@@ -1,6 +1,10 @@
 package user
 
-import "time"
+import (
+	"time"
+
+	"github.com/shopspring/decimal"
+)
 
 type User struct {
 	ID             ID
@@ -9,4 +13,10 @@ type User struct {
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 	DeletedAt      *time.Time
+}
+
+// CanDebit проверяет, не превышает ли списание лимит овердрафта.
+func (u User) CanDebit(currentAvailable decimal.Decimal, amount decimal.Decimal) bool {
+	minAllowed := u.OverdraftLimit.Value.Neg()
+	return currentAvailable.Sub(amount).GreaterThanOrEqual(minAllowed)
 }

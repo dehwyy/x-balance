@@ -31,7 +31,15 @@
       "Bash(make fmt:*)",
       "Bash(find:*)",
       "Bash(grep:*)",
-      "Bash(go fmt:*)"
+      "Bash(go fmt:*)",
+      "Bash(DATABASE_URL=\"postgres://balance:balance@localhost:5432/balance?sslmode=disable\" REDIS_URL=\"redis://localhost:6379\" PORT=50051 go run ./cmd/balance/...)",
+      "Bash(netstat -ano)",
+      "Bash(findstr :50051)",
+      "Bash(taskkill:*)",
+      "Bash(cmd /c \"taskkill /PID 39400 /F\")",
+      "Bash(powershell -Command \"Stop-Process -Id 39400 -Force\" 2>&1)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   },
   "spinnerTipsEnabled": false

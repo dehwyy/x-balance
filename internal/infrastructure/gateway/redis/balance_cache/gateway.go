@@ -1,10 +1,9 @@
 package balancecache
 
 import (
-	"fmt"
-
 	"github.com/dehwyy/x-balance/internal/domain/gateway"
 	"github.com/redis/go-redis/v9"
+	"go.uber.org/fx"
 )
 
 var _ gateway.BalanceCache = &Implementation{}
@@ -18,10 +17,15 @@ type Implementation struct {
 	client *redis.Client
 }
 
-func New(client *redis.Client) *Implementation {
-	return &Implementation{client: client}
+type Opts struct {
+	fx.In
+	Client *redis.Client
+}
+
+func New(opts Opts) *Implementation {
+	return &Implementation{client: opts.Client}
 }
 
 func balanceKey(userID string) string {
-	return fmt.Sprintf("balance:%s", userID)
+	return "balance:" + userID
 }

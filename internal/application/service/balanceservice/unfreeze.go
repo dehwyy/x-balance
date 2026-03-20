@@ -4,10 +4,12 @@ import (
 	"context"
 
 	"github.com/dehwyy/tracerfx/pkg/tracer/dspan"
+	tlog "github.com/dehwyy/tracerfx/pkg/tracer/log"
+	"github.com/shopspring/decimal"
+
 	"github.com/dehwyy/x-balance/internal/application/dto"
 	"github.com/dehwyy/x-balance/internal/domain/entity/event"
 	user "github.com/dehwyy/x-balance/internal/domain/entity/user"
-	"github.com/shopspring/decimal"
 )
 
 type UnfreezeRequest struct {
@@ -24,47 +26,70 @@ func (s *Service) Unfreeze(
 	ctx context.Context,
 	req *UnfreezeRequest,
 ) (*UnfreezeResponse, error) {
-	ctx, span := dspan.Start(ctx, "balanceservice.Service.Unfreeze", dspan.Attr("req", req))
+	ctx, span := dspan.Start(
+		ctx,
+		"balanceservice.Service.Unfreeze",
+		dspan.Attr("req", req),
+	)
 	defer span.End()
 
-	releaseKey := event.TransactionID{Value: req.TransactionID.Value + ":release"}
+	releaseKey := req.TransactionID.ReleaseKey()
 
-	existingResp, err := s.eventRepo.GetByTransactionID(ctx, dto.EventGetByTxIDRequest{TransactionID: releaseKey})
+	existingEvent, err := s.eventRepo.GetByTransactionID(
+		ctx,
+		dto.EventGetByTxIDRequest{TransactionID: releaseKey},
+	)
 	if err == nil {
-		response := &UnfreezeResponse{UnfrozenAmount: existingResp.Event.Amount.Value.Abs(), TransactionID: req.TransactionID}
-		span.WithAttribute("response", response)
-		return response, nil
+		return dspan.Response(span, &UnfreezeResponse{UnfrozenAmount: existingEvent.Event.Amount.Value.Abs(), TransactionID: req.TransactionID}), nil
 	}
 	if !isNotFound(err) {
 		return nil, span.Err(err)
 	}
 
-	freezeResp, err := s.eventRepo.GetByTransactionID(ctx, dto.EventGetByTxIDRequest{TransactionID: req.TransactionID})
+	frozenEvent, err := s.eventRepo.GetByTransactionID(
+		ctx,
+		dto.EventGetByTxIDRequest{TransactionID: req.TransactionID},
+	)
 	if err != nil {
 		return nil, span.Err(ErrFreezeNotFound)
 	}
 
-	frozenAmount := freezeResp.Event.Amount.Value
+	frozenAmount := frozenEvent.Event.Amount.Value
 
-	err = s.tx.Do(ctx, "balanceservice.Unfreeze", func(ctx context.Context) error {
-		if _, err := s.eventRepo.Create(ctx, dto.EventCreateRequest{
-			UserID:        req.UserID,
-			Type:          event.TypeFreezeRelease,
-			Amount:        event.Amount{Value: frozenAmount.Neg()},
-			TransactionID: releaseKey,
-		}); err != nil {
-			return err
-		}
-		return nil
-	})
+	err = s.tx.Do(
+		ctx,
+		"balanceservice.Unfreeze",
+		func(ctx context.Context) error {
+			if _, err := s.eventRepo.Create(
+				ctx,
+				dto.EventCreateRequest{
+					UserID:        req.UserID,
+					Type:          event.TypeFreezeRelease,
+					Amount:        event.NewAmount(frozenAmount.Neg()),
+					TransactionID: releaseKey,
+				},
+			); err != nil {
+				return err
+			}
+			return nil
+		},
+	)
 	if err != nil {
 		return nil, span.Err(err)
 	}
 
-	_ = s.freezeScheduler.Cancel(ctx, dto.FreezeCancelRequest{TransactionID: req.TransactionID})
-	_ = s.balanceCache.Invalidate(ctx, dto.BalanceCacheInvalidateRequest{UserID: req.UserID})
+	if err := s.freezeScheduler.Cancel(
+		ctx,
+		dto.FreezeCancelRequest{TransactionID: req.TransactionID},
+	); err != nil {
+		tlog.FromContext(ctx).Error("failed to cancel freeze scheduler", "err", err)
+	}
+	if err := s.balanceCache.Invalidate(
+		ctx,
+		dto.BalanceCacheInvalidateRequest{UserID: req.UserID},
+	); err != nil {
+		tlog.FromContext(ctx).Error("failed to invalidate balance cache", "err", err)
+	}
 
-	response := &UnfreezeResponse{UnfrozenAmount: frozenAmount, TransactionID: req.TransactionID}
-	span.WithAttribute("response", response)
-	return response, nil
+	return dspan.Response(span, &UnfreezeResponse{UnfrozenAmount: frozenAmount, TransactionID: req.TransactionID}), nil
 }

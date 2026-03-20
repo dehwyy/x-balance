@@ -11,10 +11,17 @@ func (impl *Implementation) Cancel(
 	ctx context.Context,
 	req dto.FreezeCancelRequest,
 ) error {
-	ctx, span := dspan.Start(ctx, "freezescheduler.Implementation.Cancel", dspan.Attr("req", req))
+	ctx, span := dspan.Start(
+		ctx,
+		"freezescheduler.Implementation.Cancel",
+		dspan.Attr("req", req),
+	)
 	defer span.End()
 
-	if err := impl.client.Del(ctx, freezeKey(req.TransactionID.Value)).Err(); err != nil {
+	if err := impl.client.Del(
+		ctx,
+		freezeKey(req.TransactionID.Value),
+	).Err(); err != nil {
 		return span.Err(err)
 	}
 	return nil

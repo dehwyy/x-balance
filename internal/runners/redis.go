@@ -6,22 +6,27 @@ import (
 
 	"github.com/dehwyy/x-balance/internal/config"
 	"github.com/redis/go-redis/v9"
+	"go.uber.org/fx"
 )
 
-func NewRedis(cfg *config.Config) (*redis.Client, error) {
-	opts, err := redis.ParseURL(cfg.RedisURL)
+type NewRedisOpts struct {
+	fx.In
+	Config *config.Config
+}
+
+func NewRedis(opts NewRedisOpts) (*redis.Client, error) {
+	redisOpts, err := redis.ParseURL(opts.Config.RedisURL)
 	if err != nil {
 		return nil, fmt.Errorf("parse redis url: %w", err)
 	}
 
-	client := redis.NewClient(opts)
+	client := redis.NewClient(redisOpts)
 
 	ctx := context.Background()
 	if err := client.Ping(ctx).Err(); err != nil {
 		return nil, fmt.Errorf("ping redis: %w", err)
 	}
 
-	// Enable keyspace notifications for freeze expiry
 	client.ConfigSet(ctx, "notify-keyspace-events", "KEA")
 
 	return client, nil

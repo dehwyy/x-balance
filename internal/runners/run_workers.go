@@ -3,10 +3,10 @@ package runners
 import (
 	"context"
 
-	"github.com/rs/zerolog"
 	"go.uber.org/fx"
 
-	"github.com/dehwyy/x-balance/internal/application/worker"
+	freezeexpiry "github.com/dehwyy/x-balance/internal/application/worker/freeze_expiry"
+	snapshotcron "github.com/dehwyy/x-balance/internal/application/worker/snapshot_cron"
 	"github.com/dehwyy/x-balance/internal/config"
 )
 
@@ -14,9 +14,8 @@ type RunWorkersOpts struct {
 	fx.In
 	LC             fx.Lifecycle
 	Config         *config.Config
-	Log            zerolog.Logger
-	FreezeWorker   *worker.FreezeExpiryWorker
-	SnapshotWorker *worker.SnapshotCronWorker
+	FreezeWorker   *freezeexpiry.Worker
+	SnapshotWorker *snapshotcron.Worker
 }
 
 func RunWorkers(opts RunWorkersOpts) {
@@ -26,7 +25,7 @@ func RunWorkers(opts RunWorkersOpts) {
 
 			if opts.Config.SnapshotCron != "" {
 				if err := opts.SnapshotWorker.Start(ctx, opts.Config.SnapshotCron); err != nil {
-					opts.Log.Error().Err(err).Msg("failed to start snapshot cron worker")
+					return err
 				}
 			}
 
