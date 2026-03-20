@@ -12,7 +12,11 @@ func (impl *Implementation) Create(
 	ctx context.Context,
 	req dto.EventCreateRequest,
 ) (dto.EventCreateResponse, error) {
-	ctx, span := dspan.Start(ctx, "eventrepo.Implementation.Create", dspan.Attr("req", req))
+	ctx, span := dspan.Start(
+		ctx,
+		"eventrepo.Implementation.Create",
+		dspan.Attr("req", req),
+	)
 	defer span.End()
 
 	// Import from event model converter
@@ -23,5 +27,10 @@ func (impl *Implementation) Create(
 		return dto.EventCreateResponse{}, span.Err(err)
 	}
 
-	return dspan.Response(span, dto.EventCreateResponse{Event: *eventconvert.ModelToEvent(m)}), nil
+	return dspan.Response(
+		span,
+		dto.EventCreateResponse{
+			Event: *eventconvert.ModelToEvent(m),
+		},
+	), nil
 }

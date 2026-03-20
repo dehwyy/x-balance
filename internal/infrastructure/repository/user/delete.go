@@ -13,7 +13,11 @@ func (impl *Implementation) Delete(
 	ctx context.Context,
 	req dto.UserDeleteRequest,
 ) error {
-	ctx, span := dspan.Start(ctx, "userrepo.Implementation.Delete", dspan.Attr("req", req))
+	ctx, span := dspan.Start(
+		ctx,
+		"userrepo.Implementation.Delete",
+		dspan.Attr("req", req),
+	)
 	defer span.End()
 
 	db := impl.tx.GetConnection(ctx)

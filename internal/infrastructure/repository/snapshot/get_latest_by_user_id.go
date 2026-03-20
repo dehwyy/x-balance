@@ -16,7 +16,11 @@ func (impl *Implementation) GetLatestByUserID(
 	ctx context.Context,
 	req dto.SnapshotGetLatestByUserIDRequest,
 ) (dto.SnapshotGetLatestByUserIDResponse, error) {
-	ctx, span := dspan.Start(ctx, "snapshotrepo.Implementation.GetLatestByUserID", dspan.Attr("req", req))
+	ctx, span := dspan.Start(
+		ctx,
+		"snapshotrepo.Implementation.GetLatestByUserID",
+		dspan.Attr("req", req),
+	)
 	defer span.End()
 
 	db := impl.tx.GetConnection(ctx)
@@ -30,5 +34,10 @@ func (impl *Implementation) GetLatestByUserID(
 		return dto.SnapshotGetLatestByUserIDResponse{}, span.Err(err)
 	}
 
-	return dspan.Response(span, dto.SnapshotGetLatestByUserIDResponse{Snapshot: *snapshotconvert.ModelToSnapshot(&m)}), nil
+	return dspan.Response(
+		span,
+		dto.SnapshotGetLatestByUserIDResponse{
+			Snapshot: *snapshotconvert.ModelToSnapshot(&m),
+		},
+	), nil
 }

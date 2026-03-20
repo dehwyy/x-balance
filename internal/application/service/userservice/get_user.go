@@ -30,11 +30,18 @@ func (s *Service) GetUser(
 
 	userDTO, err := s.userRepo.GetByID(
 		ctx,
-		dto.UserGetByIDRequest{ID: req.ID},
+		dto.UserGetByIDRequest{
+			ID: req.ID,
+		},
 	)
 	if err != nil {
 		return nil, span.Err(err)
 	}
 
-	return dspan.Response(span, &GetUserResponse{User: &userDTO.User}), nil
+	return dspan.Response(
+		span,
+		&GetUserResponse{
+			User: &userDTO.User,
+		},
+	), nil
 }

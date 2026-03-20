@@ -16,7 +16,11 @@ func (impl *Implementation) Update(
 	ctx context.Context,
 	req dto.UserUpdateRequest,
 ) (dto.UserUpdateResponse, error) {
-	ctx, span := dspan.Start(ctx, "userrepo.Implementation.Update", dspan.Attr("req", req))
+	ctx, span := dspan.Start(
+		ctx,
+		"userrepo.Implementation.Update",
+		dspan.Attr("req", req),
+	)
 	defer span.End()
 
 	db := impl.tx.GetConnection(ctx)
@@ -36,5 +40,10 @@ func (impl *Implementation) Update(
 		return dto.UserUpdateResponse{}, span.Err(err)
 	}
 
-	return dspan.Response(span, dto.UserUpdateResponse{User: *userconvert.ModelToUser(&m)}), nil
+	return dspan.Response(
+		span,
+		dto.UserUpdateResponse{
+			User: *userconvert.ModelToUser(&m),
+		},
+	), nil
 }

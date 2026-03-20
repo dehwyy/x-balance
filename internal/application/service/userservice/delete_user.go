@@ -30,7 +30,9 @@ func (s *Service) DeleteUser(
 		func(ctx context.Context) error {
 			return s.userRepo.Delete(
 				ctx,
-				dto.UserDeleteRequest{ID: req.ID},
+				dto.UserDeleteRequest{
+					ID: req.ID,
+				},
 			)
 		},
 	)

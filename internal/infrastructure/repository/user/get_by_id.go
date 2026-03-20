@@ -16,7 +16,11 @@ func (impl *Implementation) GetByID(
 	ctx context.Context,
 	req dto.UserGetByIDRequest,
 ) (dto.UserGetByIDResponse, error) {
-	ctx, span := dspan.Start(ctx, "userrepo.Implementation.GetByID", dspan.Attr("req", req))
+	ctx, span := dspan.Start(
+		ctx,
+		"userrepo.Implementation.GetByID",
+		dspan.Attr("req", req),
+	)
 	defer span.End()
 
 	db := impl.tx.GetConnection(ctx)
@@ -28,5 +32,10 @@ func (impl *Implementation) GetByID(
 		return dto.UserGetByIDResponse{}, span.Err(err)
 	}
 
-	return dspan.Response(span, dto.UserGetByIDResponse{User: *userconvert.ModelToUser(&m)}), nil
+	return dspan.Response(
+		span,
+		dto.UserGetByIDResponse{
+			User: *userconvert.ModelToUser(&m),
+		},
+	), nil
 }

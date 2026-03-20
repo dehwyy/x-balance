@@ -34,17 +34,25 @@ func (s *Service) GetBalance(
 
 	cacheResult, err := s.balanceCache.Get(
 		ctx,
-		dto.BalanceCacheGetRequest{UserID: req.UserID},
+		dto.BalanceCacheGetRequest{
+			UserID: req.UserID,
+		},
 	)
 	if err == nil && cacheResult.Found {
-		return dspan.Response(span, &GetBalanceResponse{
-			Available: cacheResult.Available,
-			Frozen:    cacheResult.Frozen,
-			Total:     cacheResult.Available.Add(cacheResult.Frozen),
-		}), nil
+		return dspan.Response(
+			span,
+			&GetBalanceResponse{
+				Available: cacheResult.Available,
+				Frozen:    cacheResult.Frozen,
+				Total:     cacheResult.Available.Add(cacheResult.Frozen),
+			},
+		), nil
 	}
 
-	available, frozen, err := s.computeBalance(ctx, req.UserID)
+	available, frozen, err := s.computeBalance(
+		ctx,
+		req.UserID,
+	)
 	if err != nil {
 		return nil, span.Err(err)
 	}
@@ -60,17 +68,22 @@ func (s *Service) GetBalance(
 		tlog.FromContext(ctx).Error("failed to set balance cache", "err", err)
 	}
 
-	return dspan.Response(span, &GetBalanceResponse{
-		Available: available,
-		Frozen:    frozen,
-		Total:     available.Add(frozen),
-	}), nil
+	return dspan.Response(
+		span,
+		&GetBalanceResponse{
+			Available: available,
+			Frozen:    frozen,
+			Total:     available.Add(frozen),
+		},
+	), nil
 }
 
 func (s *Service) computeBalance(ctx context.Context, userID user.ID) (decimal.Decimal, decimal.Decimal, error) {
 	snapshotResult, err := s.snapshotRepo.GetLatestByUserID(
 		ctx,
-		dto.SnapshotGetLatestByUserIDRequest{UserID: userID},
+		dto.SnapshotGetLatestByUserIDRequest{
+			UserID: userID,
+		},
 	)
 	if err != nil {
 		return decimal.Zero, decimal.Zero, err
@@ -79,12 +92,18 @@ func (s *Service) computeBalance(ctx context.Context, userID user.ID) (decimal.D
 
 	sumSinceSnapshot, err := s.eventRepo.SumSinceSnapshot(
 		ctx,
-		dto.EventSumSinceSnapshotRequest{UserID: userID, SnapshotID: snap.ID},
+		dto.EventSumSinceSnapshotRequest{
+			UserID:     userID,
+			SnapshotID: snap.ID,
+		},
 	)
 	if err != nil {
 		return decimal.Zero, decimal.Zero, err
 	}
 
-	available, frozen := snap.ComputeBalance(sumSinceSnapshot.Available, sumSinceSnapshot.Frozen)
+	available, frozen := snap.ComputeBalance(
+		sumSinceSnapshot.Available,
+		sumSinceSnapshot.Frozen,
+	)
 	return available, frozen, nil
 }

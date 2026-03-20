@@ -16,7 +16,11 @@ func (impl *Implementation) GetByTransactionID(
 	ctx context.Context,
 	req dto.EventGetByTxIDRequest,
 ) (dto.EventGetByTxIDResponse, error) {
-	ctx, span := dspan.Start(ctx, "eventrepo.Implementation.GetByTransactionID", dspan.Attr("req", req))
+	ctx, span := dspan.Start(
+		ctx,
+		"eventrepo.Implementation.GetByTransactionID",
+		dspan.Attr("req", req),
+	)
 	defer span.End()
 
 	db := impl.tx.GetConnection(ctx)
@@ -28,5 +32,10 @@ func (impl *Implementation) GetByTransactionID(
 		return dto.EventGetByTxIDResponse{}, span.Err(err)
 	}
 
-	return dspan.Response(span, dto.EventGetByTxIDResponse{Event: *eventconvert.ModelToEvent(&m)}), nil
+	return dspan.Response(
+		span,
+		dto.EventGetByTxIDResponse{
+			Event: *eventconvert.ModelToEvent(&m),
+		},
+	), nil
 }

@@ -32,12 +32,19 @@ func (s *Service) GetTransaction(
 
 	eventResult, err := s.eventRepo.GetByID(
 		ctx,
-		dto.EventGetByIDRequest{ID: req.TxID},
+		dto.EventGetByIDRequest{
+			ID: req.TxID,
+		},
 	)
 	if err != nil {
 		return nil, span.Err(err)
 	}
 
 	e := eventResult.Event
-	return dspan.Response(span, &GetTransactionResponse{Event: &e}), nil
+	return dspan.Response(
+		span,
+		&GetTransactionResponse{
+			Event: &e,
+		},
+	), nil
 }

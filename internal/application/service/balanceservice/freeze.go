@@ -40,78 +40,106 @@ func (s *Service) Freeze(
 
 	existingEvent, err := s.eventRepo.GetByTransactionID(
 		ctx,
-		dto.EventGetByTxIDRequest{TransactionID: req.TransactionID},
+		dto.EventGetByTxIDRequest{
+			TransactionID: req.TransactionID,
+		},
 	)
 	if err == nil {
-		return dspan.Response(span, &FreezeResponse{FrozenAmount: decimal.Decimal(existingEvent.Event.Amount), TransactionID: req.TransactionID}), nil
+		return dspan.Response(
+			span,
+			&FreezeResponse{
+				FrozenAmount:  decimal.Decimal(existingEvent.Event.Amount),
+				TransactionID: req.TransactionID,
+			},
+		), nil
 	}
 	if !errors.Is(err, repository.ErrNotFound) {
 		return nil, span.Err(err)
 	}
 
-	err = s.withRetry(ctx, func(ctx context.Context) error {
-		return s.tx.Do(
-			ctx,
-			"balanceservice.Freeze",
-			func(ctx context.Context) error {
-				snapshotResult, err := s.snapshotRepo.GetLatestByUserID(
-					ctx,
-					dto.SnapshotGetLatestByUserIDRequest{UserID: req.UserID},
-				)
-				if err != nil {
-					return err
-				}
-				snap := snapshotResult.Snapshot
+	err = s.withRetry(
+		ctx,
+		func(ctx context.Context) error {
+			return s.tx.Do(
+				ctx,
+				"balanceservice.Freeze",
+				func(ctx context.Context) error {
+					snapshotResult, err := s.snapshotRepo.GetLatestByUserID(
+						ctx,
+						dto.SnapshotGetLatestByUserIDRequest{
+							UserID: req.UserID,
+						},
+					)
+					if err != nil {
+						return err
+					}
+					snap := snapshotResult.Snapshot
 
-				userDTO, err := s.userRepo.GetByID(
-					ctx,
-					dto.UserGetByIDRequest{ID: req.UserID},
-				)
-				if err != nil {
-					return err
-				}
-				u := userDTO.User
+					userDTO, err := s.userRepo.GetByID(
+						ctx,
+						dto.UserGetByIDRequest{
+							ID: req.UserID,
+						},
+					)
+					if err != nil {
+						return err
+					}
+					u := userDTO.User
 
-				sumSinceSnapshot, err := s.eventRepo.SumSinceSnapshot(
-					ctx,
-					dto.EventSumSinceSnapshotRequest{UserID: req.UserID, SnapshotID: snap.ID},
-				)
-				if err != nil {
-					return err
-				}
+					sumSinceSnapshot, err := s.eventRepo.SumSinceSnapshot(
+						ctx,
+						dto.EventSumSinceSnapshotRequest{
+							UserID:     req.UserID,
+							SnapshotID: snap.ID,
+						},
+					)
+					if err != nil {
+						return err
+					}
 
-				available, _ := snap.ComputeBalance(sumSinceSnapshot.Available, sumSinceSnapshot.Frozen)
-				if !u.CanDebit(available, req.Amount) {
-					return ErrInsufficientFunds
-				}
+					available, _ := snap.ComputeBalance(
+						sumSinceSnapshot.Available,
+						sumSinceSnapshot.Frozen,
+					)
+					if !u.CanDebit(
+						available,
+						req.Amount,
+					) {
+						return ErrInsufficientFunds
+					}
 
-				if err := s.snapshotRepo.UpdateVersion(
-					ctx,
-					dto.SnapshotUpdateVersionRequest{Snapshot: snap},
-				); err != nil {
-					return err
-				}
+					if err := s.snapshotRepo.UpdateVersion(
+						ctx,
+						dto.SnapshotUpdateVersionRequest{
+							Snapshot: snap,
+						},
+					); err != nil {
+						return err
+					}
 
-				snapID := event.SnapshotID(string(snap.ID))
-				newEvent := event.New(
-					req.UserID,
-					transactionv1.TransactionType_TRANSACTION_TYPE_FREEZE_HOLD,
-					event.Amount(req.Amount),
-					req.TransactionID,
-					&snapID,
-					req.FreezeTimeoutSeconds,
-				)
-				if _, err := s.eventRepo.Create(
-					ctx,
-					dto.EventCreateRequest{Event: newEvent},
-				); err != nil {
-					return err
-				}
+					snapID := event.SnapshotID(string(snap.ID))
+					newEvent := event.New(
+						req.UserID,
+						transactionv1.TransactionType_TRANSACTION_TYPE_FREEZE_HOLD,
+						event.Amount(req.Amount),
+						req.TransactionID,
+						&snapID,
+						req.FreezeTimeoutSeconds,
+					)
+					if _, err := s.eventRepo.Create(
+						ctx,
+						dto.EventCreateRequest{
+							Event: newEvent,
+						},
+					); err != nil {
+						return err
+					}
 
-				return nil
-			},
-		)
-	})
+					return nil
+				},
+			)
+		},
+	)
 	if err != nil {
 		return nil, span.Err(err)
 	}
@@ -130,10 +158,18 @@ func (s *Service) Freeze(
 
 	if err := s.balanceCache.Invalidate(
 		ctx,
-		dto.BalanceCacheInvalidateRequest{UserID: req.UserID},
+		dto.BalanceCacheInvalidateRequest{
+			UserID: req.UserID,
+		},
 	); err != nil {
 		tlog.FromContext(ctx).Error("failed to invalidate balance cache", "err", err)
 	}
 
-	return dspan.Response(span, &FreezeResponse{FrozenAmount: req.Amount, TransactionID: req.TransactionID}), nil
+	return dspan.Response(
+		span,
+		&FreezeResponse{
+			FrozenAmount:  req.Amount,
+			TransactionID: req.TransactionID,
+		},
+	), nil
 }

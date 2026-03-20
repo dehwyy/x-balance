@@ -68,11 +68,18 @@ func (s *Service) GetEventByTransactionID(
 
 	eventDTO, err := s.eventRepo.GetByTransactionID(
 		ctx,
-		dto.EventGetByTxIDRequest{TransactionID: req.TransactionID},
+		dto.EventGetByTxIDRequest{
+			TransactionID: req.TransactionID,
+		},
 	)
 	if err != nil {
 		return nil, span.Err(err)
 	}
 
-	return dspan.Response(span, &GetEventByTransactionIDResponse{Event: eventDTO.Event}), nil
+	return dspan.Response(
+		span,
+		&GetEventByTransactionIDResponse{
+			Event: eventDTO.Event,
+		},
+	), nil
 }

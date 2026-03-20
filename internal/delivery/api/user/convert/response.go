@@ -13,9 +13,13 @@ func CreateUserResponseToProto(resp *userservice.CreateUserResponse) *userspb.Cr
 }
 
 func GetUserResponseToProto(resp *userservice.GetUserResponse) *userspb.GetUserResponse {
-	return &userspb.GetUserResponse{User: domainconvert.UserToProto(resp.User)}
+	return &userspb.GetUserResponse{
+		User: domainconvert.UserToProto(resp.User),
+	}
 }
 
 func UpdateUserResponseToProto(resp *userservice.UpdateUserResponse) *userspb.UpdateUserResponse {
-	return &userspb.UpdateUserResponse{User: domainconvert.UserToProto(resp.User)}
+	return &userspb.UpdateUserResponse{
+		User: domainconvert.UserToProto(resp.User),
+	}
 }

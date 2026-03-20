@@ -13,7 +13,11 @@ func (impl *Implementation) Create(
 	ctx context.Context,
 	req dto.SnapshotCreateRequest,
 ) (dto.SnapshotCreateResponse, error) {
-	ctx, span := dspan.Start(ctx, "snapshotrepo.Implementation.Create", dspan.Attr("req", req))
+	ctx, span := dspan.Start(
+		ctx,
+		"snapshotrepo.Implementation.Create",
+		dspan.Attr("req", req),
+	)
 	defer span.End()
 
 	snap := &snapshot.Snapshot{
@@ -28,5 +32,10 @@ func (impl *Implementation) Create(
 		return dto.SnapshotCreateResponse{}, span.Err(err)
 	}
 
-	return dspan.Response(span, dto.SnapshotCreateResponse{Snapshot: *snapshotconvert.ModelToSnapshot(m)}), nil
+	return dspan.Response(
+		span,
+		dto.SnapshotCreateResponse{
+			Snapshot: *snapshotconvert.ModelToSnapshot(m),
+		},
+	), nil
 }

@@ -44,7 +44,10 @@ func (s *Service) Credit(
 		},
 	)
 	if err == nil {
-		bal, _, err := s.computeBalance(ctx, req.UserID)
+		bal, _, err := s.computeBalance(
+			ctx,
+			req.UserID,
+		)
 		if err != nil {
 			return nil, span.Err(err)
 		}
@@ -62,64 +65,70 @@ func (s *Service) Credit(
 
 	var newBalance decimal.Decimal
 
-	err = s.withRetry(ctx, func(ctx context.Context) error {
-		return s.tx.Do(
-			ctx,
-			"balanceservice.Credit",
-			func(ctx context.Context) error {
-				snapshotResult, err := s.snapshotRepo.GetLatestByUserID(
-					ctx,
-					dto.SnapshotGetLatestByUserIDRequest{
-						UserID: req.UserID,
-					},
-				)
-				if err != nil {
-					return err
-				}
-				snap := snapshotResult.Snapshot
+	err = s.withRetry(
+		ctx,
+		func(ctx context.Context) error {
+			return s.tx.Do(
+				ctx,
+				"balanceservice.Credit",
+				func(ctx context.Context) error {
+					snapshotResult, err := s.snapshotRepo.GetLatestByUserID(
+						ctx,
+						dto.SnapshotGetLatestByUserIDRequest{
+							UserID: req.UserID,
+						},
+					)
+					if err != nil {
+						return err
+					}
+					snap := snapshotResult.Snapshot
 
-				if err := s.snapshotRepo.UpdateVersion(
-					ctx,
-					dto.SnapshotUpdateVersionRequest{
-						Snapshot: snap,
-					},
-				); err != nil {
-					return err
-				}
+					if err := s.snapshotRepo.UpdateVersion(
+						ctx,
+						dto.SnapshotUpdateVersionRequest{
+							Snapshot: snap,
+						},
+					); err != nil {
+						return err
+					}
 
-				snapID := event.SnapshotID(string(snap.ID))
-				newEvent := event.New(
-					req.UserID,
-					transactionv1.TransactionType_TRANSACTION_TYPE_CREDIT,
-					event.Amount(req.Amount),
-					req.TransactionID,
-					&snapID,
-					0,
-				)
-				if _, err := s.eventRepo.Create(
-					ctx,
-					dto.EventCreateRequest{
-						Event: newEvent,
-					},
-				); err != nil {
-					return err
-				}
+					snapID := event.SnapshotID(string(snap.ID))
+					newEvent := event.New(
+						req.UserID,
+						transactionv1.TransactionType_TRANSACTION_TYPE_CREDIT,
+						event.Amount(req.Amount),
+						req.TransactionID,
+						&snapID,
+						0,
+					)
+					if _, err := s.eventRepo.Create(
+						ctx,
+						dto.EventCreateRequest{
+							Event: newEvent,
+						},
+					); err != nil {
+						return err
+					}
 
-				sumSinceSnapshot, err := s.eventRepo.SumSinceSnapshot(
-					ctx,
-					dto.EventSumSinceSnapshotRequest{
-						UserID:     req.UserID,
-						SnapshotID: snap.ID,
-					},
-				)
-				if err != nil {
-					return err
-				}
-				newBalance, _ = snap.ComputeBalance(sumSinceSnapshot.Available, sumSinceSnapshot.Frozen)
-				return nil
-			},
-		)
-	})
+					sumSinceSnapshot, err := s.eventRepo.SumSinceSnapshot(
+						ctx,
+						dto.EventSumSinceSnapshotRequest{
+							UserID:     req.UserID,
+							SnapshotID: snap.ID,
+						},
+					)
+					if err != nil {
+						return err
+					}
+					newBalance, _ = snap.ComputeBalance(
+						sumSinceSnapshot.Available,
+						sumSinceSnapshot.Frozen,
+					)
+					return nil
+				},
+			)
+		},
+	)
 	if err != nil {
 		return nil, span.Err(err)
 	}
@@ -132,7 +141,10 @@ func (s *Service) Credit(
 	); err != nil {
 		tlog.FromContext(ctx).Error("failed to invalidate balance cache", "err", err)
 	}
-	if err := s.maybeCreateSnapshot(ctx, req.UserID); err != nil {
+	if err := s.maybeCreateSnapshot(
+		ctx,
+		req.UserID,
+	); err != nil {
 		tlog.FromContext(ctx).Error("failed to maybe create snapshot", "err", err)
 	}
 

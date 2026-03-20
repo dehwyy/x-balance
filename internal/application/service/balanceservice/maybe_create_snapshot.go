@@ -17,7 +17,9 @@ func (s *Service) maybeCreateSnapshot(ctx context.Context, userID user.ID) error
 
 	snapshotResult, err := s.snapshotRepo.GetLatestByUserID(
 		ctx,
-		dto.SnapshotGetLatestByUserIDRequest{UserID: userID},
+		dto.SnapshotGetLatestByUserIDRequest{
+			UserID: userID,
+		},
 	)
 	if err != nil {
 		return err
@@ -26,7 +28,10 @@ func (s *Service) maybeCreateSnapshot(ctx context.Context, userID user.ID) error
 
 	countResult, err := s.eventRepo.CountSinceSnapshot(
 		ctx,
-		dto.EventCountSinceSnapshotRequest{UserID: userID, SnapshotID: snap.ID},
+		dto.EventCountSinceSnapshotRequest{
+			UserID:     userID,
+			SnapshotID: snap.ID,
+		},
 	)
 	if err != nil {
 		return err
@@ -38,13 +43,19 @@ func (s *Service) maybeCreateSnapshot(ctx context.Context, userID user.ID) error
 
 	sumSinceSnapshot, err := s.eventRepo.SumSinceSnapshot(
 		ctx,
-		dto.EventSumSinceSnapshotRequest{UserID: userID, SnapshotID: snap.ID},
+		dto.EventSumSinceSnapshotRequest{
+			UserID:     userID,
+			SnapshotID: snap.ID,
+		},
 	)
 	if err != nil {
 		return err
 	}
 
-	available, frozen := snap.ComputeBalance(sumSinceSnapshot.Available, sumSinceSnapshot.Frozen)
+	available, frozen := snap.ComputeBalance(
+		sumSinceSnapshot.Available,
+		sumSinceSnapshot.Frozen,
+	)
 
 	_, err = s.snapshotRepo.Create(
 		ctx,

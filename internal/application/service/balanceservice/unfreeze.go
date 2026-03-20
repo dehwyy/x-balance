@@ -40,10 +40,18 @@ func (s *Service) Unfreeze(
 
 	existingEvent, err := s.eventRepo.GetByTransactionID(
 		ctx,
-		dto.EventGetByTxIDRequest{TransactionID: releaseKey},
+		dto.EventGetByTxIDRequest{
+			TransactionID: releaseKey,
+		},
 	)
 	if err == nil {
-		return dspan.Response(span, &UnfreezeResponse{UnfrozenAmount: decimal.Decimal(existingEvent.Event.Amount).Abs(), TransactionID: req.TransactionID}), nil
+		return dspan.Response(
+			span,
+			&UnfreezeResponse{
+				UnfrozenAmount: decimal.Decimal(existingEvent.Event.Amount).Abs(),
+				TransactionID:  req.TransactionID,
+			},
+		), nil
 	}
 	if !errors.Is(err, repository.ErrNotFound) {
 		return nil, span.Err(err)
@@ -51,7 +59,9 @@ func (s *Service) Unfreeze(
 
 	frozenEvent, err := s.eventRepo.GetByTransactionID(
 		ctx,
-		dto.EventGetByTxIDRequest{TransactionID: req.TransactionID},
+		dto.EventGetByTxIDRequest{
+			TransactionID: req.TransactionID,
+		},
 	)
 	if err != nil {
 		return nil, span.Err(ErrFreezeNotFound)
@@ -73,7 +83,9 @@ func (s *Service) Unfreeze(
 			)
 			if _, err := s.eventRepo.Create(
 				ctx,
-				dto.EventCreateRequest{Event: newEvent},
+				dto.EventCreateRequest{
+					Event: newEvent,
+				},
 			); err != nil {
 				return err
 			}
@@ -86,7 +98,9 @@ func (s *Service) Unfreeze(
 
 	if err := s.freezeScheduler.Cancel(
 		ctx,
-		dto.FreezeCancelRequest{TransactionID: req.TransactionID},
+		dto.FreezeCancelRequest{
+			TransactionID: req.TransactionID,
+		},
 	); err != nil {
 		tlog.FromContext(ctx).Error("failed to cancel freeze scheduler", "err", err)
 	}
@@ -97,5 +111,11 @@ func (s *Service) Unfreeze(
 		tlog.FromContext(ctx).Error("failed to invalidate balance cache", "err", err)
 	}
 
-	return dspan.Response(span, &UnfreezeResponse{UnfrozenAmount: frozenAmount, TransactionID: req.TransactionID}), nil
+	return dspan.Response(
+		span,
+		&UnfreezeResponse{
+			UnfrozenAmount: frozenAmount,
+			TransactionID:  req.TransactionID,
+		},
+	), nil
 }

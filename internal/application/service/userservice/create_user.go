@@ -53,5 +53,10 @@ func (s *Service) CreateUser(
 		return nil, span.Err(err)
 	}
 
-	return dspan.Response(span, &CreateUserResponse{User: &u}), nil
+	return dspan.Response(
+		span,
+		&CreateUserResponse{
+			User: &u,
+		},
+	), nil
 }

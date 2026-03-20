@@ -54,5 +54,11 @@ func (s *Service) ListTransactions(
 		events[i] = &e
 	}
 
-	return dspan.Response(span, &ListTransactionsResponse{Events: events, Total: eventListResult.Total}), nil
+	return dspan.Response(
+		span,
+		&ListTransactionsResponse{
+			Events: events,
+			Total:  eventListResult.Total,
+		},
+	), nil
 }

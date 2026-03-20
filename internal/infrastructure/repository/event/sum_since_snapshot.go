@@ -13,7 +13,11 @@ func (impl *Implementation) SumSinceSnapshot(
 	ctx context.Context,
 	req dto.EventSumSinceSnapshotRequest,
 ) (dto.EventSumSinceSnapshotResponse, error) {
-	ctx, span := dspan.Start(ctx, "eventrepo.Implementation.SumSinceSnapshot", dspan.Attr("req", req))
+	ctx, span := dspan.Start(
+		ctx,
+		"eventrepo.Implementation.SumSinceSnapshot",
+		dspan.Attr("req", req),
+	)
 	defer span.End()
 
 	db := impl.tx.GetConnection(ctx)
@@ -47,5 +51,11 @@ func (impl *Implementation) SumSinceSnapshot(
 		return dto.EventSumSinceSnapshotResponse{}, span.Err(err)
 	}
 
-	return dspan.Response(span, dto.EventSumSinceSnapshotResponse{Available: balanceResult.Total, Frozen: frozenResult.Total}), nil
+	return dspan.Response(
+		span,
+		dto.EventSumSinceSnapshotResponse{
+			Available: balanceResult.Total,
+			Frozen:    frozenResult.Total,
+		},
+	), nil
 }

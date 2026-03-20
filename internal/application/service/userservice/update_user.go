@@ -39,7 +39,11 @@ func (s *Service) UpdateUser(
 			updateDTO, err := s.userRepo.Update(
 				ctx,
 				dto.UserUpdateRequest{
-					User: user.New(req.ID, req.Name, req.OverdraftLimit),
+					User: user.New(
+						req.ID,
+						req.Name,
+						req.OverdraftLimit,
+					),
 				},
 			)
 			if err != nil {
@@ -53,5 +57,10 @@ func (s *Service) UpdateUser(
 		return nil, span.Err(err)
 	}
 
-	return dspan.Response(span, &UpdateUserResponse{User: &u}), nil
+	return dspan.Response(
+		span,
+		&UpdateUserResponse{
+			User: &u,
+		},
+	), nil
 }
