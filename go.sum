@@ -20,6 +20,8 @@ github.com/coreos/go-systemd/v22 v22.5.0/go.mod h1:Y58oyj3AT4RCenI/lSvhwexgC+NSV
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/dehwyy/dbfx v0.1.0 h1:Hhw1QOlKhxWl1LCiW54FEZAUdlZDYWIyEJ5wiADQrXs=
+github.com/dehwyy/dbfx v0.1.0/go.mod h1:ptFD1x/E4C0NBvvNtLEyOh7vsQMlrpIRPTv2SWqD3Sk=
 github.com/dehwyy/tracerfx v0.0.4 h1:PNYDT3WfK5wPqlkVgEBk2VOqV1GFFNqu94d59quof+o=
 github.com/dehwyy/tracerfx v0.0.4/go.mod h1:xe0mUMIrUXsYvjL2MwQayqOPnRbhoAc9pTh5SPhFN3k=
 github.com/dehwyy/txmanagerfx v0.0.3 h1:y/VRqegdw6aqIo7Y/5h0+tf3bLTGtgTkPhdQON/FXoU=

@@ -7,7 +7,9 @@ import (
 )
 
 func CreateUserResponseToProto(resp *userservice.CreateUserResponse) *userspb.CreateUserResponse {
-	return &userspb.CreateUserResponse{User: domainconvert.UserToProto(resp.User)}
+	return &userspb.CreateUserResponse{
+		User: domainconvert.UserToProto(resp.User),
+	}
 }
 
 func GetUserResponseToProto(resp *userservice.GetUserResponse) *userspb.GetUserResponse {

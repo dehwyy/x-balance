@@ -39,13 +39,20 @@ func (s *Service) GetUserIDByTransactionID(
 
 	eventDTO, err := s.eventRepo.GetByTransactionID(
 		ctx,
-		dto.EventGetByTxIDRequest{TransactionID: req.TransactionID},
+		dto.EventGetByTxIDRequest{
+			TransactionID: req.TransactionID,
+		},
 	)
 	if err != nil {
 		return nil, span.Err(err)
 	}
 
-	return dspan.Response(span, &GetUserIDByTransactionIDResponse{UserID: eventDTO.Event.UserID}), nil
+	return dspan.Response(
+		span,
+		&GetUserIDByTransactionIDResponse{
+			UserID: eventDTO.Event.UserID,
+		},
+	), nil
 }
 
 func (s *Service) GetEventByTransactionID(

@@ -39,7 +39,11 @@
       "Bash(cmd /c \"taskkill /PID 39400 /F\")",
       "Bash(powershell -Command \"Stop-Process -Id 39400 -Force\" 2>&1)",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(make generate:*)",
+      "Bash(curl:*)",
+      "Bash(unzip -l)",
+      "Bash(xargs sed:*)"
     ]
   },
   "spinnerTipsEnabled": false
