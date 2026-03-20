@@ -17,7 +17,8 @@ func main() {
 		),
 		fx.Provide(
 			config.Load,
-			runners.NewDB,
+			runners.NewGORM,
+			runners.NewTxManager,
 			runners.NewRedis,
 		),
 

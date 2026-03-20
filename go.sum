@@ -20,6 +20,8 @@ github.com/coreos/go-systemd/v22 v22.5.0/go.mod h1:Y58oyj3AT4RCenI/lSvhwexgC+NSV
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/dehwyy/dbfx v0.1.0 h1:Hhw1QOlKhxWl1LCiW54FEZAUdlZDYWIyEJ5wiADQrXs=
+github.com/dehwyy/dbfx v0.1.0/go.mod h1:ptFD1x/E4C0NBvvNtLEyOh7vsQMlrpIRPTv2SWqD3Sk=
 github.com/dehwyy/tracerfx v0.0.4 h1:PNYDT3WfK5wPqlkVgEBk2VOqV1GFFNqu94d59quof+o=
 github.com/dehwyy/tracerfx v0.0.4/go.mod h1:xe0mUMIrUXsYvjL2MwQayqOPnRbhoAc9pTh5SPhFN3k=
 github.com/dehwyy/txmanagerfx v0.0.3 h1:y/VRqegdw6aqIo7Y/5h0+tf3bLTGtgTkPhdQON/FXoU=
@@ -309,5 +311,7 @@ gorm.io/driver/postgres v1.6.0 h1:2dxzU8xJ+ivvqTRph34QX+WrRaJlmfyPqXmoGVjMBa4=
 gorm.io/driver/postgres v1.6.0/go.mod h1:vUw0mrGgrTK+uPHEhAdV4sfFELrByKVGnaVRkXDhtWo=
 gorm.io/gorm v1.31.1 h1:7CA8FTFz/gRfgqgpeKIBcervUn3xSyPUmr6B2WXJ7kg=
 gorm.io/gorm v1.31.1/go.mod h1:XyQVbO2k6YkOis7C2437jSit3SsDK72s7n7rsSHd+Gs=
+gorm.io/plugin/dbresolver v1.6.2 h1:F4b85TenghUeITqe3+epPSUtHH7RIk3fXr5l83DF8Pc=
+gorm.io/plugin/dbresolver v1.6.2/go.mod h1:tctw63jdrOezFR9HmrKnPkmig3m5Edem9fdxk9bQSzM=
 honnef.co/go/tools v0.0.0-20190102054323-c2f93a96b099/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
 honnef.co/go/tools v0.0.0-20190523083050-ea95bdfd59fc/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
