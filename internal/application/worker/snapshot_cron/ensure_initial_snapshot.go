@@ -2,11 +2,13 @@ package snapshotcron
 
 import (
 	"context"
+	"errors"
 
 	"github.com/dehwyy/tracerfx/pkg/tracer/dspan"
 	"github.com/dehwyy/x-balance/internal/application/dto"
 	"github.com/dehwyy/x-balance/internal/domain/entity/snapshot"
 	user "github.com/dehwyy/x-balance/internal/domain/entity/user"
+	"github.com/dehwyy/x-balance/internal/domain/repository"
 	"github.com/shopspring/decimal"
 )
 
@@ -25,7 +27,7 @@ func (w *Worker) ensureInitialSnapshot(ctx context.Context, userID user.ID) erro
 	if err == nil {
 		return nil
 	}
-	if !isNotFound(err) {
+	if !errors.Is(err, repository.ErrNotFound) {
 		return span.Err(err)
 	}
 
@@ -33,8 +35,8 @@ func (w *Worker) ensureInitialSnapshot(ctx context.Context, userID user.ID) erro
 		ctx,
 		dto.SnapshotCreateRequest{
 			UserID:  userID,
-			Balance: snapshot.NewBalance(decimal.Zero),
-			Version: snapshot.NewVersion(0),
+			Balance: snapshot.Balance(decimal.Zero),
+			Version: snapshot.Version(0),
 		},
 	); err != nil {
 		return span.Err(err)

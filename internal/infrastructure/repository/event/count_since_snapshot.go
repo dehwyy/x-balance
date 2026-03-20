@@ -18,13 +18,13 @@ func (impl *Implementation) CountSinceSnapshot(
 	db := impl.tx.GetConnection(ctx)
 
 	var snapshotModel models.Snapshot
-	if err := db.Where("id = ?", req.SnapshotID.Value).First(&snapshotModel).Error; err != nil {
+	if err := db.Where("id = ?", string(req.SnapshotID)).First(&snapshotModel).Error; err != nil {
 		return dto.EventCountSinceSnapshotResponse{}, span.Err(err)
 	}
 
 	var count int64
 	if err := db.Model(&models.Event{}).
-		Where("user_id = ? AND created_at > ?", req.UserID.Value, snapshotModel.CreatedAt).
+		Where("user_id = ? AND created_at > ?", string(req.UserID), snapshotModel.CreatedAt).
 		Count(&count).Error; err != nil {
 		return dto.EventCountSinceSnapshotResponse{}, span.Err(err)
 	}

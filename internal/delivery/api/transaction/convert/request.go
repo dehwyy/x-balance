@@ -10,7 +10,7 @@ import (
 
 func ListTransactionsRequestToDomain(req *transactionspb.ListTransactionsRequest) *transactionservice.ListTransactionsRequest {
 	r := &transactionservice.ListTransactionsRequest{
-		UserID:     user.NewID(req.UserId),
+		UserID:     user.ID(req.UserId),
 		Pagination: storage.NewPagination(int(req.Limit), int(req.Offset)),
 	}
 	if req.From != nil {
@@ -26,7 +26,7 @@ func ListTransactionsRequestToDomain(req *transactionspb.ListTransactionsRequest
 
 func GetTransactionRequestToDomain(req *transactionspb.GetTransactionRequest) *transactionservice.GetTransactionRequest {
 	return &transactionservice.GetTransactionRequest{
-		UserID: user.NewID(req.UserId),
-		TxID:   event.NewID(req.TxId),
+		UserID: user.ID(req.UserId),
+		TxID:   event.ID(req.TxId),
 	}
 }

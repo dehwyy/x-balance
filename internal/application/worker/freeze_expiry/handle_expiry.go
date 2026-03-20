@@ -29,7 +29,7 @@ func (w *Worker) handleExpiry(ctx context.Context, key string) {
 	userIDResult, err := w.balanceservice.GetUserIDByTransactionID(
 		ctx,
 		&balanceservice.GetUserIDByTransactionIDRequest{
-			TransactionID: event.NewTransactionID(txID),
+			TransactionID: event.TransactionID(txID),
 		},
 	)
 	if err != nil {
@@ -41,7 +41,7 @@ func (w *Worker) handleExpiry(ctx context.Context, key string) {
 		ctx,
 		&balanceservice.UnfreezeRequest{
 			UserID:        userIDResult.UserID,
-			TransactionID: event.NewTransactionID(txID),
+			TransactionID: event.TransactionID(txID),
 		},
 	); err != nil {
 		tlog.FromContext(ctx).Error("failed to auto-unfreeze", "tx_id", txID, "err", err)

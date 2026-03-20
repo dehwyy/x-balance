@@ -21,7 +21,7 @@ func (impl *Implementation) Schedule(
 
 	if err := impl.client.Set(
 		ctx,
-		freezeKey(req.TransactionID.Value),
+		freezeKey(string(req.TransactionID)),
 		"",
 		time.Duration(req.TTLSeconds)*time.Second,
 	).Err(); err != nil {

@@ -1,0 +1,2 @@
+# This directory previously contained type.go which has been deleted
+# due to the enum refactoring - enums now come from proto only

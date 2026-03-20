@@ -23,7 +23,7 @@ func (s Snapshot) ComputeBalance(
 	sumAvailable decimal.Decimal,
 	sumFrozen decimal.Decimal,
 ) (available decimal.Decimal, frozen decimal.Decimal) {
-	available = s.Balance.Value.Add(sumAvailable).Sub(sumFrozen)
+	available = decimal.Decimal(s.Balance).Add(sumAvailable).Sub(sumFrozen)
 	frozen = sumFrozen
 	return
 }

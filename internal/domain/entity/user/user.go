@@ -25,6 +25,6 @@ func New(id ID, name Name, overdraftLimit OverdraftLimit) User {
 
 // CanDebit проверяет, не превышает ли списание лимит овердрафта.
 func (u User) CanDebit(currentAvailable decimal.Decimal, amount decimal.Decimal) bool {
-	minAllowed := u.OverdraftLimit.Value.Neg()
+	minAllowed := decimal.Decimal(u.OverdraftLimit).Neg()
 	return currentAvailable.Sub(amount).GreaterThanOrEqual(minAllowed)
 }

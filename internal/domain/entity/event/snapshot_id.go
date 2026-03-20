@@ -1,5 +1,7 @@
 package event
 
-type SnapshotID struct{ Value string }
+type SnapshotID string
 
-func NewSnapshotID(v string) SnapshotID { return SnapshotID{Value: v} }
+func (s SnapshotID) String() string {
+	return string(s)
+}

@@ -1,6 +1,8 @@
 package snapshotconvert
 
 import (
+	"github.com/shopspring/decimal"
+
 	"github.com/dehwyy/x-balance/internal/domain/entity/snapshot"
 	user "github.com/dehwyy/x-balance/internal/domain/entity/user"
 	"github.com/dehwyy/x-balance/internal/infrastructure/repository/models"
@@ -8,20 +10,20 @@ import (
 
 func ModelToSnapshot(m *models.Snapshot) *snapshot.Snapshot {
 	return &snapshot.Snapshot{
-		ID:        snapshot.ID{Value: m.ID},
-		UserID:    user.ID{Value: m.UserID},
-		Balance:   snapshot.Balance{Value: m.Balance},
-		Version:   snapshot.Version{Value: m.Version},
+		ID:        snapshot.ID(m.ID),
+		UserID:    user.ID(m.UserID),
+		Balance:   snapshot.Balance(m.Balance),
+		Version:   snapshot.Version(m.Version),
 		CreatedAt: m.CreatedAt,
 	}
 }
 
 func SnapshotToModel(s *snapshot.Snapshot) *models.Snapshot {
 	return &models.Snapshot{
-		ID:        s.ID.Value,
-		UserID:    s.UserID.Value,
-		Balance:   s.Balance.Value,
-		Version:   s.Version.Value,
+		ID:        string(s.ID),
+		UserID:    string(s.UserID),
+		Balance:   decimal.Decimal(s.Balance),
+		Version:   int64(s.Version),
 		CreatedAt: s.CreatedAt,
 	}
 }

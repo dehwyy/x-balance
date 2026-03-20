@@ -20,7 +20,7 @@ func (impl *Implementation) Invalidate(
 
 	if err := impl.client.Del(
 		ctx,
-		balanceKey(req.UserID.Value),
+		balanceKey(string(req.UserID)),
 	).Err(); err != nil {
 		return span.Err(err)
 	}

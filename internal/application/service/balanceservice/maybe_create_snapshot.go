@@ -50,8 +50,8 @@ func (s *Service) maybeCreateSnapshot(ctx context.Context, userID user.ID) error
 		ctx,
 		dto.SnapshotCreateRequest{
 			UserID:  userID,
-			Balance: snapshot.NewBalance(available),
-			Version: snapshot.NewVersion(0),
+			Balance: snapshot.Balance(available),
+			Version: snapshot.Version(0),
 		},
 	)
 	if err != nil {

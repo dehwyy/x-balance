@@ -2,6 +2,7 @@ package balanceservice
 
 import (
 	"context"
+	"errors"
 
 	"github.com/dehwyy/tracerfx/pkg/tracer/dspan"
 	tlog "github.com/dehwyy/tracerfx/pkg/tracer/log"
@@ -10,6 +11,8 @@ import (
 	"github.com/dehwyy/x-balance/internal/application/dto"
 	"github.com/dehwyy/x-balance/internal/domain/entity/event"
 	user "github.com/dehwyy/x-balance/internal/domain/entity/user"
+	"github.com/dehwyy/x-balance/internal/domain/repository"
+	transactionv1 "github.com/dehwyy/x-balance/internal/generated/pb/common/transaction/v1"
 )
 
 type DebitRequest struct {
@@ -36,16 +39,24 @@ func (s *Service) Debit(
 
 	_, err := s.eventRepo.GetByTransactionID(
 		ctx,
-		dto.EventGetByTxIDRequest{TransactionID: req.TransactionID},
+		dto.EventGetByTxIDRequest{
+			TransactionID: req.TransactionID,
+		},
 	)
 	if err == nil {
 		bal, _, err := s.computeBalance(ctx, req.UserID)
 		if err != nil {
 			return nil, span.Err(err)
 		}
-		return dspan.Response(span, &DebitResponse{NewBalance: bal, TransactionID: req.TransactionID}), nil
+		return dspan.Response(
+			span,
+			&DebitResponse{
+				NewBalance:    bal,
+				TransactionID: req.TransactionID,
+			},
+		), nil
 	}
-	if !isNotFound(err) {
+	if !errors.Is(err, repository.ErrNotFound) {
 		return nil, span.Err(err)
 	}
 
@@ -58,7 +69,9 @@ func (s *Service) Debit(
 			func(ctx context.Context) error {
 				snapshotResult, err := s.snapshotRepo.GetLatestByUserID(
 					ctx,
-					dto.SnapshotGetLatestByUserIDRequest{UserID: req.UserID},
+					dto.SnapshotGetLatestByUserIDRequest{
+						UserID: req.UserID,
+					},
 				)
 				if err != nil {
 					return err
@@ -67,7 +80,9 @@ func (s *Service) Debit(
 
 				userDTO, err := s.userRepo.GetByID(
 					ctx,
-					dto.UserGetByIDRequest{ID: req.UserID},
+					dto.UserGetByIDRequest{
+						ID: req.UserID,
+					},
 				)
 				if err != nil {
 					return err
@@ -76,7 +91,10 @@ func (s *Service) Debit(
 
 				sumSinceSnapshot, err := s.eventRepo.SumSinceSnapshot(
 					ctx,
-					dto.EventSumSinceSnapshotRequest{UserID: req.UserID, SnapshotID: snap.ID},
+					dto.EventSumSinceSnapshotRequest{
+						UserID:     req.UserID,
+						SnapshotID: snap.ID,
+					},
 				)
 				if err != nil {
 					return err
@@ -89,23 +107,27 @@ func (s *Service) Debit(
 
 				if err := s.snapshotRepo.UpdateVersion(
 					ctx,
-					dto.SnapshotUpdateVersionRequest{Snapshot: snap},
+					dto.SnapshotUpdateVersionRequest{
+						Snapshot: snap,
+					},
 				); err != nil {
 					return err
 				}
 
-				snapID := event.NewSnapshotID(snap.ID.Value)
+				snapID := event.SnapshotID(string(snap.ID))
 				newEvent := event.New(
 					req.UserID,
-					event.TypeDebit,
-					event.NewAmount(req.Amount.Neg()),
+					transactionv1.TransactionType_TRANSACTION_TYPE_DEBIT,
+					event.Amount(req.Amount.Neg()),
 					req.TransactionID,
 					&snapID,
 					0,
 				)
 				if _, err := s.eventRepo.Create(
 					ctx,
-					dto.EventCreateRequest{Event: newEvent},
+					dto.EventCreateRequest{
+						Event: newEvent,
+					},
 				); err != nil {
 					return err
 				}
@@ -121,7 +143,9 @@ func (s *Service) Debit(
 
 	if err := s.balanceCache.Invalidate(
 		ctx,
-		dto.BalanceCacheInvalidateRequest{UserID: req.UserID},
+		dto.BalanceCacheInvalidateRequest{
+			UserID: req.UserID,
+		},
 	); err != nil {
 		tlog.FromContext(ctx).Error("failed to invalidate balance cache", "err", err)
 	}
@@ -129,5 +153,11 @@ func (s *Service) Debit(
 		tlog.FromContext(ctx).Error("failed to maybe create snapshot", "err", err)
 	}
 
-	return dspan.Response(span, &DebitResponse{NewBalance: newBalance, TransactionID: req.TransactionID}), nil
+	return dspan.Response(
+		span,
+		&DebitResponse{
+			NewBalance:    newBalance,
+			TransactionID: req.TransactionID,
+		},
+	), nil
 }

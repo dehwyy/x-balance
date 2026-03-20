@@ -20,8 +20,8 @@ func (impl *Implementation) UpdateVersion(
 
 	db := impl.tx.GetConnection(ctx)
 	result := db.Model(&models.Snapshot{}).
-		Where("id = ? AND version = ?", req.Snapshot.ID.Value, req.Snapshot.Version.Value).
-		Update("version", req.Snapshot.Version.Value+1)
+		Where("id = ? AND version = ?", string(req.Snapshot.ID), int64(req.Snapshot.Version)).
+		Update("version", int64(req.Snapshot.Version)+1)
 
 	if result.Error != nil {
 		return span.Err(result.Error)

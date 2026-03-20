@@ -5,8 +5,8 @@ import (
 
 	"github.com/dehwyy/tracerfx/pkg/tracer/dspan"
 	"github.com/dehwyy/x-balance/internal/application/dto"
+	"github.com/dehwyy/x-balance/internal/domain/entity/snapshot"
 	snapshotconvert "github.com/dehwyy/x-balance/internal/domain/entity/snapshot/convert"
-	"github.com/dehwyy/x-balance/internal/infrastructure/repository/models"
 )
 
 func (impl *Implementation) Create(
@@ -16,11 +16,12 @@ func (impl *Implementation) Create(
 	ctx, span := dspan.Start(ctx, "snapshotrepo.Implementation.Create", dspan.Attr("req", req))
 	defer span.End()
 
-	m := &models.Snapshot{
-		UserID:  req.UserID.Value,
-		Balance: req.Balance.Value,
-		Version: req.Version.Value,
+	snap := &snapshot.Snapshot{
+		UserID:  req.UserID,
+		Balance: req.Balance,
+		Version: req.Version,
 	}
+	m := snapshotconvert.SnapshotToModel(snap)
 
 	db := impl.tx.GetConnection(ctx)
 	if err := db.Create(m).Error; err != nil {
