@@ -27,7 +27,5 @@ func (impl *Implementation) Create(
 		return dto.SnapshotCreateResponse{}, span.Err(err)
 	}
 
-	response := dto.SnapshotCreateResponse{Snapshot: *snapshotconvert.ModelToSnapshot(m)}
-	span.WithAttribute("response", response)
-	return response, nil
+	return dspan.Response(span, dto.SnapshotCreateResponse{Snapshot: *snapshotconvert.ModelToSnapshot(m)}), nil
 }

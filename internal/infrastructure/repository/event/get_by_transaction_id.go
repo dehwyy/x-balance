@@ -22,7 +22,5 @@ func (impl *Implementation) GetByTransactionID(
 		return dto.EventGetByTxIDResponse{}, span.Err(err)
 	}
 
-	response := dto.EventGetByTxIDResponse{Event: *eventconvert.ModelToEvent(&m)}
-	span.WithAttribute("response", response)
-	return response, nil
+	return dspan.Response(span, dto.EventGetByTxIDResponse{Event: *eventconvert.ModelToEvent(&m)}), nil
 }

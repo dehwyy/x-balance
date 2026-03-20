@@ -16,3 +16,26 @@ type Event struct {
 	FreezeExpiresAt *time.Time
 	CreatedAt       time.Time
 }
+
+func New(
+	userID user.ID,
+	eventType EventType,
+	amount Amount,
+	transactionID TransactionID,
+	snapshotID *SnapshotID,
+	freezeTimeoutSeconds int64,
+) Event {
+	var expiresAt *time.Time
+	if freezeTimeoutSeconds > 0 {
+		t := time.Now().Add(time.Duration(freezeTimeoutSeconds) * time.Second)
+		expiresAt = &t
+	}
+	return Event{
+		UserID:          userID,
+		Type:            eventType,
+		Amount:          amount,
+		TransactionID:   transactionID,
+		SnapshotID:      snapshotID,
+		FreezeExpiresAt: expiresAt,
+	}
+}

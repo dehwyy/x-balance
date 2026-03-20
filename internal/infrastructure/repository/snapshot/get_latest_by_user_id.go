@@ -24,7 +24,5 @@ func (impl *Implementation) GetLatestByUserID(
 		return dto.SnapshotGetLatestByUserIDResponse{}, span.Err(err)
 	}
 
-	response := dto.SnapshotGetLatestByUserIDResponse{Snapshot: *snapshotconvert.ModelToSnapshot(&m)}
-	span.WithAttribute("response", response)
-	return response, nil
+	return dspan.Response(span, dto.SnapshotGetLatestByUserIDResponse{Snapshot: *snapshotconvert.ModelToSnapshot(&m)}), nil
 }

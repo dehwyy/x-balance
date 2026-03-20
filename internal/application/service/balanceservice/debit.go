@@ -95,15 +95,17 @@ func (s *Service) Debit(
 				}
 
 				snapID := event.NewSnapshotID(snap.ID.Value)
+				newEvent := event.New(
+					req.UserID,
+					event.TypeDebit,
+					event.NewAmount(req.Amount.Neg()),
+					req.TransactionID,
+					&snapID,
+					0,
+				)
 				if _, err := s.eventRepo.Create(
 					ctx,
-					dto.EventCreateRequest{
-						UserID:        req.UserID,
-						Type:          event.TypeDebit,
-						Amount:        event.NewAmount(req.Amount.Neg()),
-						TransactionID: req.TransactionID,
-						SnapshotID:    &snapID,
-					},
+					dto.EventCreateRequest{Event: newEvent},
 				); err != nil {
 					return err
 				}

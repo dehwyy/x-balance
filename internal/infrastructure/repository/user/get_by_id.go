@@ -22,7 +22,5 @@ func (impl *Implementation) GetByID(
 		return dto.UserGetByIDResponse{}, span.Err(err)
 	}
 
-	response := dto.UserGetByIDResponse{User: *userconvert.ModelToUser(&m)}
-	span.WithAttribute("response", response)
-	return response, nil
+	return dspan.Response(span, dto.UserGetByIDResponse{User: *userconvert.ModelToUser(&m)}), nil
 }

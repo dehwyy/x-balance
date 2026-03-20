@@ -33,9 +33,9 @@ func TestCreateUser_Success(t *testing.T) {
 	overdraft, _ := decimal.NewFromString("100")
 
 	expectedUser := user.User{
-		ID:             user.ID{Value: "new-user-id"},
-		Name:           user.Name{Value: "John Doe"},
-		OverdraftLimit: user.OverdraftLimit{Value: overdraft},
+		ID:             user.NewID("new-user-id"),
+		Name:           user.NewName("John Doe"),
+		OverdraftLimit: user.NewOverdraftLimit(overdraft),
 	}
 
 	userRepo.On("Create", mock.Anything, mock.AnythingOfType("dto.UserCreateRequest")).
@@ -43,8 +43,8 @@ func TestCreateUser_Success(t *testing.T) {
 
 	svc := newUserService(userRepo)
 	resp, err := svc.CreateUser(ctx, &userservice.CreateUserRequest{
-		Name:           "John Doe",
-		OverdraftLimit: overdraft,
+		Name:           user.NewName("John Doe"),
+		OverdraftLimit: user.NewOverdraftLimit(overdraft),
 	})
 
 	require.NoError(t, err)
@@ -64,8 +64,8 @@ func TestCreateUser_RepositoryError(t *testing.T) {
 
 	svc := newUserService(userRepo)
 	_, err := svc.CreateUser(ctx, &userservice.CreateUserRequest{
-		Name:           "John Doe",
-		OverdraftLimit: overdraft,
+		Name:           user.NewName("John Doe"),
+		OverdraftLimit: user.NewOverdraftLimit(overdraft),
 	})
 
 	assert.ErrorIs(t, err, expectedErr)
@@ -79,17 +79,17 @@ func TestGetUser_Success(t *testing.T) {
 	overdraft, _ := decimal.NewFromString("100")
 
 	expectedUser := user.User{
-		ID:             user.ID{Value: testUserID},
-		Name:           user.Name{Value: "John Doe"},
-		OverdraftLimit: user.OverdraftLimit{Value: overdraft},
+		ID:             user.NewID(testUserID),
+		Name:           user.NewName("John Doe"),
+		OverdraftLimit: user.NewOverdraftLimit(overdraft),
 	}
 
-	userRepo.On("GetByID", mock.Anything, dto.UserGetByIDRequest{ID: user.ID{Value: testUserID}}).
+	userRepo.On("GetByID", mock.Anything, dto.UserGetByIDRequest{ID: user.NewID(testUserID)}).
 		Return(dto.UserGetByIDResponse{User: expectedUser}, nil)
 
 	svc := newUserService(userRepo)
 	resp, err := svc.GetUser(ctx, &userservice.GetUserRequest{
-		ID: testUserID,
+		ID: user.NewID(testUserID),
 	})
 
 	require.NoError(t, err)
@@ -102,12 +102,12 @@ func TestGetUser_NotFound(t *testing.T) {
 
 	userRepo := &mocks.UserRepository{}
 
-	userRepo.On("GetByID", mock.Anything, dto.UserGetByIDRequest{ID: user.ID{Value: testUserID}}).
+	userRepo.On("GetByID", mock.Anything, dto.UserGetByIDRequest{ID: user.NewID(testUserID)}).
 		Return(dto.UserGetByIDResponse{}, gorm.ErrRecordNotFound)
 
 	svc := newUserService(userRepo)
 	_, err := svc.GetUser(ctx, &userservice.GetUserRequest{
-		ID: testUserID,
+		ID: user.NewID(testUserID),
 	})
 
 	assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
@@ -121,9 +121,9 @@ func TestUpdateUser_Success(t *testing.T) {
 	overdraft, _ := decimal.NewFromString("200")
 
 	updatedUser := user.User{
-		ID:             user.ID{Value: testUserID},
-		Name:           user.Name{Value: "John Smith"},
-		OverdraftLimit: user.OverdraftLimit{Value: overdraft},
+		ID:             user.NewID(testUserID),
+		Name:           user.NewName("John Smith"),
+		OverdraftLimit: user.NewOverdraftLimit(overdraft),
 	}
 
 	userRepo.On("Update", mock.Anything, mock.AnythingOfType("dto.UserUpdateRequest")).
@@ -131,9 +131,9 @@ func TestUpdateUser_Success(t *testing.T) {
 
 	svc := newUserService(userRepo)
 	resp, err := svc.UpdateUser(ctx, &userservice.UpdateUserRequest{
-		ID:             testUserID,
-		Name:           "John Smith",
-		OverdraftLimit: overdraft,
+		ID:             user.NewID(testUserID),
+		Name:           user.NewName("John Smith"),
+		OverdraftLimit: user.NewOverdraftLimit(overdraft),
 	})
 
 	require.NoError(t, err)
@@ -152,9 +152,9 @@ func TestUpdateUser_NotFound(t *testing.T) {
 
 	svc := newUserService(userRepo)
 	_, err := svc.UpdateUser(ctx, &userservice.UpdateUserRequest{
-		ID:             testUserID,
-		Name:           "John Smith",
-		OverdraftLimit: overdraft,
+		ID:             user.NewID(testUserID),
+		Name:           user.NewName("John Smith"),
+		OverdraftLimit: user.NewOverdraftLimit(overdraft),
 	})
 
 	assert.ErrorIs(t, err, gorm.ErrRecordNotFound)
@@ -166,12 +166,12 @@ func TestDeleteUser_Success(t *testing.T) {
 
 	userRepo := &mocks.UserRepository{}
 
-	userRepo.On("Delete", mock.Anything, dto.UserDeleteRequest{ID: user.ID{Value: testUserID}}).
+	userRepo.On("Delete", mock.Anything, dto.UserDeleteRequest{ID: user.NewID(testUserID)}).
 		Return(nil)
 
 	svc := newUserService(userRepo)
 	err := svc.DeleteUser(ctx, &userservice.DeleteUserRequest{
-		ID: testUserID,
+		ID: user.NewID(testUserID),
 	})
 
 	require.NoError(t, err)
@@ -183,12 +183,12 @@ func TestDeleteUser_NotFound(t *testing.T) {
 
 	userRepo := &mocks.UserRepository{}
 
-	userRepo.On("Delete", mock.Anything, dto.UserDeleteRequest{ID: user.ID{Value: testUserID}}).
+	userRepo.On("Delete", mock.Anything, dto.UserDeleteRequest{ID: user.NewID(testUserID)}).
 		Return(gorm.ErrRecordNotFound)
 
 	svc := newUserService(userRepo)
 	err := svc.DeleteUser(ctx, &userservice.DeleteUserRequest{
-		ID: testUserID,
+		ID: user.NewID(testUserID),
 	})
 
 	assert.ErrorIs(t, err, gorm.ErrRecordNotFound)

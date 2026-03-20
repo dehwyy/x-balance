@@ -11,12 +11,7 @@ import (
 )
 
 type EventCreateRequest struct {
-	UserID          user.ID
-	Type            event.EventType
-	Amount          event.Amount
-	TransactionID   event.TransactionID
-	SnapshotID      *event.SnapshotID
-	FreezeExpiresAt *time.Time
+	Event event.Event
 }
 
 type EventCreateResponse struct {

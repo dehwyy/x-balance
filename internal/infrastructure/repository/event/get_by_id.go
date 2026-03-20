@@ -22,7 +22,5 @@ func (impl *Implementation) GetByID(
 		return dto.EventGetByIDResponse{}, span.Err(err)
 	}
 
-	response := dto.EventGetByIDResponse{Event: *eventconvert.ModelToEvent(&m)}
-	span.WithAttribute("response", response)
-	return response, nil
+	return dspan.Response(span, dto.EventGetByIDResponse{Event: *eventconvert.ModelToEvent(&m)}), nil
 }

@@ -20,7 +20,5 @@ func (h *Handler) Credit(
 		return nil, span.Err(err)
 	}
 
-	protoResponse := balanceconvert.CreditResponseToProto(response)
-	span.WithAttribute("response", protoResponse)
-	return protoResponse, nil
+	return dspan.Response(span, balanceconvert.CreditResponseToProto(response)), nil
 }

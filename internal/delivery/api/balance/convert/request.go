@@ -11,40 +11,40 @@ import (
 func CreditRequestToDomain(req *balancev1.CreditRequest) *balanceservice.CreditRequest {
 	amount, _ := decimal.NewFromString(req.Amount)
 	return &balanceservice.CreditRequest{
-		UserID:        user.ID{Value: req.UserId},
+		UserID:        user.NewID(req.UserId),
 		Amount:        amount,
-		TransactionID: event.TransactionID{Value: req.TransactionId},
+		TransactionID: event.NewTransactionID(req.TransactionId),
 	}
 }
 
 func DebitRequestToDomain(req *balancev1.DebitRequest) *balanceservice.DebitRequest {
 	amount, _ := decimal.NewFromString(req.Amount)
 	return &balanceservice.DebitRequest{
-		UserID:        user.ID{Value: req.UserId},
+		UserID:        user.NewID(req.UserId),
 		Amount:        amount,
-		TransactionID: event.TransactionID{Value: req.TransactionId},
+		TransactionID: event.NewTransactionID(req.TransactionId),
 	}
 }
 
 func FreezeRequestToDomain(req *balancev1.FreezeRequest) *balanceservice.FreezeRequest {
 	amount, _ := decimal.NewFromString(req.Amount)
 	return &balanceservice.FreezeRequest{
-		UserID:               user.ID{Value: req.UserId},
+		UserID:               user.NewID(req.UserId),
 		Amount:               amount,
-		TransactionID:        event.TransactionID{Value: req.TransactionId},
+		TransactionID:        event.NewTransactionID(req.TransactionId),
 		FreezeTimeoutSeconds: req.FreezeTimeoutSeconds,
 	}
 }
 
 func UnfreezeRequestToDomain(req *balancev1.UnfreezeRequest) *balanceservice.UnfreezeRequest {
 	return &balanceservice.UnfreezeRequest{
-		UserID:        user.ID{Value: req.UserId},
-		TransactionID: event.TransactionID{Value: req.TransactionId},
+		UserID:        user.NewID(req.UserId),
+		TransactionID: event.NewTransactionID(req.TransactionId),
 	}
 }
 
 func GetBalanceRequestToDomain(req *balancev1.GetBalanceRequest) *balanceservice.GetBalanceRequest {
 	return &balanceservice.GetBalanceRequest{
-		UserID: user.ID{Value: req.UserId},
+		UserID: user.NewID(req.UserId),
 	}
 }

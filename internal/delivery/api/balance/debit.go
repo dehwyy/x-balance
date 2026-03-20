@@ -20,7 +20,5 @@ func (h *Handler) Debit(
 		return nil, span.Err(err)
 	}
 
-	protoResponse := balanceconvert.DebitResponseToProto(response)
-	span.WithAttribute("response", protoResponse)
-	return protoResponse, nil
+	return dspan.Response(span, balanceconvert.DebitResponseToProto(response)), nil
 }

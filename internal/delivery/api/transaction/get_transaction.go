@@ -20,7 +20,5 @@ func (h *Handler) GetTransaction(
 		return nil, span.Err(err)
 	}
 
-	protoResponse := transactionconvert.GetTransactionResponseToProto(response)
-	span.WithAttribute("response", protoResponse)
-	return protoResponse, nil
+	return dspan.Response(span, transactionconvert.GetTransactionResponseToProto(response)), nil
 }

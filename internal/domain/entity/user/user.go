@@ -15,6 +15,14 @@ type User struct {
 	DeletedAt      *time.Time
 }
 
+func New(id ID, name Name, overdraftLimit OverdraftLimit) User {
+	return User{
+		ID:             id,
+		Name:           name,
+		OverdraftLimit: overdraftLimit,
+	}
+}
+
 // CanDebit проверяет, не превышает ли списание лимит овердрафта.
 func (u User) CanDebit(currentAvailable decimal.Decimal, amount decimal.Decimal) bool {
 	minAllowed := u.OverdraftLimit.Value.Neg()

@@ -29,7 +29,5 @@ func (impl *Implementation) Update(
 		return dto.UserUpdateResponse{}, span.Err(err)
 	}
 
-	response := dto.UserUpdateResponse{User: *userconvert.ModelToUser(&m)}
-	span.WithAttribute("response", response)
-	return response, nil
+	return dspan.Response(span, dto.UserUpdateResponse{User: *userconvert.ModelToUser(&m)}), nil
 }

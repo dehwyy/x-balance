@@ -37,25 +37,25 @@ func TestListTransactions_Success(t *testing.T) {
 
 	eventValues := []event.Event{
 		{
-			ID:            event.ID{Value: "event-1"},
-			UserID:        user.ID{Value: testUserID},
+			ID:            event.NewID("event-1"),
+			UserID:        user.NewID(testUserID),
 			Type:          event.TypeCredit,
-			Amount:        event.Amount{Value: decimal.NewFromInt(100)},
-			TransactionID: event.TransactionID{Value: "tx-1"},
+			Amount:        event.NewAmount(decimal.NewFromInt(100)),
+			TransactionID: event.NewTransactionID("tx-1"),
 		},
 		{
-			ID:            event.ID{Value: "event-2"},
-			UserID:        user.ID{Value: testUserID},
+			ID:            event.NewID("event-2"),
+			UserID:        user.NewID(testUserID),
 			Type:          event.TypeDebit,
-			Amount:        event.Amount{Value: decimal.NewFromInt(-50)},
-			TransactionID: event.TransactionID{Value: "tx-2"},
+			Amount:        event.NewAmount(decimal.NewFromInt(-50)),
+			TransactionID: event.NewTransactionID("tx-2"),
 		},
 	}
 
 	expectedTotal := int64(2)
 
 	expectedReq := dto.EventListRequest{
-		UserID:     user.ID{Value: testUserID},
+		UserID:     user.NewID(testUserID),
 		Pagination: storage.NewPagination(10, 0),
 		From:       &fromTime,
 		To:         &toTime,
@@ -66,7 +66,7 @@ func TestListTransactions_Success(t *testing.T) {
 
 	svc := newTransactionService(eventRepo)
 	resp, err := svc.ListTransactions(ctx, &transactionservice.ListTransactionsRequest{
-		UserID:     testUserID,
+		UserID:     user.NewID(testUserID),
 		Pagination: storage.NewPagination(10, 0),
 		From:       &fromTime,
 		To:         &toTime,
@@ -84,7 +84,7 @@ func TestListTransactions_EmptyResult(t *testing.T) {
 	eventRepo := &mocks.EventRepository{}
 
 	expectedReq := dto.EventListRequest{
-		UserID:     user.ID{Value: testUserID},
+		UserID:     user.NewID(testUserID),
 		Pagination: storage.NewPagination(10, 0),
 	}
 
@@ -93,7 +93,7 @@ func TestListTransactions_EmptyResult(t *testing.T) {
 
 	svc := newTransactionService(eventRepo)
 	resp, err := svc.ListTransactions(ctx, &transactionservice.ListTransactionsRequest{
-		UserID:     testUserID,
+		UserID:     user.NewID(testUserID),
 		Pagination: storage.NewPagination(10, 0),
 	})
 
@@ -109,7 +109,7 @@ func TestListTransactions_RepositoryError(t *testing.T) {
 	eventRepo := &mocks.EventRepository{}
 
 	expectedReq := dto.EventListRequest{
-		UserID:     user.ID{Value: testUserID},
+		UserID:     user.NewID(testUserID),
 		Pagination: storage.NewPagination(10, 0),
 	}
 
@@ -118,7 +118,7 @@ func TestListTransactions_RepositoryError(t *testing.T) {
 
 	svc := newTransactionService(eventRepo)
 	_, err := svc.ListTransactions(ctx, &transactionservice.ListTransactionsRequest{
-		UserID:     testUserID,
+		UserID:     user.NewID(testUserID),
 		Pagination: storage.NewPagination(10, 0),
 	})
 
@@ -132,20 +132,20 @@ func TestGetTransaction_Success(t *testing.T) {
 	eventRepo := &mocks.EventRepository{}
 
 	expectedEvent := event.Event{
-		ID:            event.ID{Value: testEventID},
-		UserID:        user.ID{Value: testUserID},
+		ID:            event.NewID(testEventID),
+		UserID:        user.NewID(testUserID),
 		Type:          event.TypeCredit,
-		Amount:        event.Amount{Value: decimal.NewFromInt(100)},
-		TransactionID: event.TransactionID{Value: "tx-1"},
+		Amount:        event.NewAmount(decimal.NewFromInt(100)),
+		TransactionID: event.NewTransactionID("tx-1"),
 	}
 
-	eventRepo.On("GetByID", mock.Anything, dto.EventGetByIDRequest{ID: event.ID{Value: testEventID}}).
+	eventRepo.On("GetByID", mock.Anything, dto.EventGetByIDRequest{ID: event.NewID(testEventID)}).
 		Return(dto.EventGetByIDResponse{Event: expectedEvent}, nil)
 
 	svc := newTransactionService(eventRepo)
 	resp, err := svc.GetTransaction(ctx, &transactionservice.GetTransactionRequest{
-		UserID: testUserID,
-		TxID:   testEventID,
+		UserID: user.NewID(testUserID),
+		TxID:   event.NewID(testEventID),
 	})
 
 	require.NoError(t, err)
@@ -158,13 +158,13 @@ func TestGetTransaction_NotFound(t *testing.T) {
 
 	eventRepo := &mocks.EventRepository{}
 
-	eventRepo.On("GetByID", mock.Anything, dto.EventGetByIDRequest{ID: event.ID{Value: testEventID}}).
+	eventRepo.On("GetByID", mock.Anything, dto.EventGetByIDRequest{ID: event.NewID(testEventID)}).
 		Return(dto.EventGetByIDResponse{}, gorm.ErrRecordNotFound)
 
 	svc := newTransactionService(eventRepo)
 	_, err := svc.GetTransaction(ctx, &transactionservice.GetTransactionRequest{
-		UserID: testUserID,
-		TxID:   testEventID,
+		UserID: user.NewID(testUserID),
+		TxID:   event.NewID(testEventID),
 	})
 
 	assert.ErrorIs(t, err, gorm.ErrRecordNotFound)

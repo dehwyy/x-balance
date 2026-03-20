@@ -17,14 +17,14 @@ func (impl *Implementation) Create(
 	defer span.End()
 
 	m := &models.Event{
-		UserID:          req.UserID.Value,
-		Type:            req.Type.Value,
-		Amount:          req.Amount.Value,
-		TransactionID:   req.TransactionID.Value,
-		FreezeExpiresAt: req.FreezeExpiresAt,
+		UserID:          req.Event.UserID.Value,
+		Type:            req.Event.Type.Value,
+		Amount:          req.Event.Amount.Value,
+		TransactionID:   req.Event.TransactionID.Value,
+		FreezeExpiresAt: req.Event.FreezeExpiresAt,
 	}
-	if req.SnapshotID != nil {
-		s := req.SnapshotID.Value
+	if req.Event.SnapshotID != nil {
+		s := req.Event.SnapshotID.Value
 		m.SnapshotID = &s
 	}
 
@@ -33,7 +33,5 @@ func (impl *Implementation) Create(
 		return dto.EventCreateResponse{}, span.Err(err)
 	}
 
-	response := dto.EventCreateResponse{Event: *eventconvert.ModelToEvent(m)}
-	span.WithAttribute("response", response)
-	return response, nil
+	return dspan.Response(span, dto.EventCreateResponse{Event: *eventconvert.ModelToEvent(m)}), nil
 }

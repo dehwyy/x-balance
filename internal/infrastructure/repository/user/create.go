@@ -26,7 +26,5 @@ func (impl *Implementation) Create(
 		return dto.UserCreateResponse{}, span.Err(err)
 	}
 
-	response := dto.UserCreateResponse{User: *userconvert.ModelToUser(m)}
-	span.WithAttribute("response", response)
-	return response, nil
+	return dspan.Response(span, dto.UserCreateResponse{User: *userconvert.ModelToUser(m)}), nil
 }

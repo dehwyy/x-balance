@@ -20,7 +20,5 @@ func (h *Handler) UpdateUser(
 		return nil, span.Err(err)
 	}
 
-	protoResponse := userconvert.UpdateUserResponseToProto(response)
-	span.WithAttribute("response", protoResponse)
-	return protoResponse, nil
+	return dspan.Response(span, userconvert.UpdateUserResponseToProto(response)), nil
 }

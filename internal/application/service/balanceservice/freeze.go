@@ -2,7 +2,6 @@ package balanceservice
 
 import (
 	"context"
-	"time"
 
 	"github.com/dehwyy/tracerfx/pkg/tracer/dspan"
 	tlog "github.com/dehwyy/tracerfx/pkg/tracer/log"
@@ -90,23 +89,18 @@ func (s *Service) Freeze(
 					return err
 				}
 
-				var expiresAt *time.Time
-				if req.FreezeTimeoutSeconds > 0 {
-					t := time.Now().Add(time.Duration(req.FreezeTimeoutSeconds) * time.Second)
-					expiresAt = &t
-				}
-
 				snapID := event.NewSnapshotID(snap.ID.Value)
+				newEvent := event.New(
+					req.UserID,
+					event.TypeFreezeHold,
+					event.NewAmount(req.Amount),
+					req.TransactionID,
+					&snapID,
+					req.FreezeTimeoutSeconds,
+				)
 				if _, err := s.eventRepo.Create(
 					ctx,
-					dto.EventCreateRequest{
-						UserID:          req.UserID,
-						Type:            event.TypeFreezeHold,
-						Amount:          event.NewAmount(req.Amount),
-						TransactionID:   req.TransactionID,
-						SnapshotID:      &snapID,
-						FreezeExpiresAt: expiresAt,
-					},
+					dto.EventCreateRequest{Event: newEvent},
 				); err != nil {
 					return err
 				}

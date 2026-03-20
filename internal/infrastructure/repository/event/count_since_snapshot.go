@@ -29,7 +29,5 @@ func (impl *Implementation) CountSinceSnapshot(
 		return dto.EventCountSinceSnapshotResponse{}, span.Err(err)
 	}
 
-	response := dto.EventCountSinceSnapshotResponse{Count: count}
-	span.WithAttribute("response", response)
-	return response, nil
+	return dspan.Response(span, dto.EventCountSinceSnapshotResponse{Count: count}), nil
 }

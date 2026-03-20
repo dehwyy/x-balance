@@ -60,14 +60,17 @@ func (s *Service) Unfreeze(
 		ctx,
 		"balanceservice.Unfreeze",
 		func(ctx context.Context) error {
+			newEvent := event.New(
+				req.UserID,
+				event.TypeFreezeRelease,
+				event.NewAmount(frozenAmount.Neg()),
+				releaseKey,
+				nil,
+				0,
+			)
 			if _, err := s.eventRepo.Create(
 				ctx,
-				dto.EventCreateRequest{
-					UserID:        req.UserID,
-					Type:          event.TypeFreezeRelease,
-					Amount:        event.NewAmount(frozenAmount.Neg()),
-					TransactionID: releaseKey,
-				},
+				dto.EventCreateRequest{Event: newEvent},
 			); err != nil {
 				return err
 			}

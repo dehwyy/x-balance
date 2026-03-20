@@ -51,7 +51,5 @@ func (impl *Implementation) List(
 		events[i] = *eventconvert.ModelToEvent(&m)
 	}
 
-	response := dto.EventListResponse{Events: events, Total: total}
-	span.WithAttribute("response", response)
-	return response, nil
+	return dspan.Response(span, dto.EventListResponse{Events: events, Total: total}), nil
 }

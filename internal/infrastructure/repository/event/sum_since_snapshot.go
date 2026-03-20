@@ -48,7 +48,5 @@ func (impl *Implementation) SumSinceSnapshot(
 		return dto.EventSumSinceSnapshotResponse{}, span.Err(err)
 	}
 
-	response := dto.EventSumSinceSnapshotResponse{Available: balanceResult.Total, Frozen: frozenResult.Total}
-	span.WithAttribute("response", response)
-	return response, nil
+	return dspan.Response(span, dto.EventSumSinceSnapshotResponse{Available: balanceResult.Total, Frozen: frozenResult.Total}), nil
 }

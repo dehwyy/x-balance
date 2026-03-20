@@ -20,7 +20,5 @@ func (h *Handler) Freeze(
 		return nil, span.Err(err)
 	}
 
-	protoResponse := balanceconvert.FreezeResponseToProto(response)
-	span.WithAttribute("response", protoResponse)
-	return protoResponse, nil
+	return dspan.Response(span, balanceconvert.FreezeResponseToProto(response)), nil
 }
