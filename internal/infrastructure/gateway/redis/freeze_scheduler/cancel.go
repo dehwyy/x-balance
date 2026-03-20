@@ -20,7 +20,7 @@ func (impl *Implementation) Cancel(
 
 	if err := impl.client.Del(
 		ctx,
-		freezeKey(req.TransactionID.Value),
+		freezeKey(string(req.TransactionID)),
 	).Err(); err != nil {
 		return span.Err(err)
 	}

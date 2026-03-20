@@ -1,9 +1,7 @@
 package user
 
-type Name struct {
-	Value string
-}
+type Name string
 
-func NewName(v string) Name {
-	return Name{Value: v}
+func (n Name) String() string {
+	return string(n)
 }

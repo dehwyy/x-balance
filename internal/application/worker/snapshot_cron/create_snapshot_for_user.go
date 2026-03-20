@@ -7,7 +7,6 @@ import (
 	"github.com/dehwyy/x-balance/internal/application/dto"
 	"github.com/dehwyy/x-balance/internal/domain/entity/snapshot"
 	user "github.com/dehwyy/x-balance/internal/domain/entity/user"
-	"gorm.io/gorm"
 )
 
 func (w *Worker) createSnapshotForUser(ctx context.Context, userID user.ID) error {
@@ -63,16 +62,12 @@ func (w *Worker) createSnapshotForUser(ctx context.Context, userID user.ID) erro
 		ctx,
 		dto.SnapshotCreateRequest{
 			UserID:  userID,
-			Balance: snapshot.NewBalance(available),
-			Version: snapshot.NewVersion(0),
+			Balance: snapshot.Balance(available),
+			Version: snapshot.Version(0),
 		},
 	); err != nil {
 		return span.Err(err)
 	}
 
 	return nil
-}
-
-func isNotFound(err error) bool {
-	return err == gorm.ErrRecordNotFound
 }

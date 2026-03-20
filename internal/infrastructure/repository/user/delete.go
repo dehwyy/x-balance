@@ -19,7 +19,7 @@ func (impl *Implementation) Delete(
 	db := impl.tx.GetConnection(ctx)
 	now := time.Now()
 	result := db.Model(&models.User{}).
-		Where("id = ? AND deleted_at IS NULL", req.ID.Value).
+		Where("id = ? AND deleted_at IS NULL", string(req.ID)).
 		Update("deleted_at", now)
 
 	if result.Error != nil {

@@ -5,6 +5,14 @@ import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/dehwyy/x-balance/internal/generated/pb/x_balance/common/transaction/v1;transactionpb";
 
+enum TransactionType {
+  TRANSACTION_TYPE_UNSPECIFIED = 0;
+  TRANSACTION_TYPE_CREDIT = 1;
+  TRANSACTION_TYPE_DEBIT = 2;
+  TRANSACTION_TYPE_FREEZE_HOLD = 3;
+  TRANSACTION_TYPE_FREEZE_RELEASE = 4;
+}
+
 // Transaction represents a balance event record.
 message Transaction {
   // Unique event identifier
@@ -12,7 +20,7 @@ message Transaction {
   // Owner user identifier
   string user_id = 2;
   // Event type: credit, debit, freeze_hold, freeze_release
-  string type = 3;
+  TransactionType type = 3;
   // Decimal amount as string
   string amount = 4;
   // Client-provided idempotency key

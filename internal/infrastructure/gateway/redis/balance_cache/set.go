@@ -31,7 +31,7 @@ func (impl *Implementation) Set(
 
 	if err := impl.client.Set(
 		ctx,
-		balanceKey(req.UserID.Value),
+		balanceKey(string(req.UserID)),
 		data,
 		0,
 	).Err(); err != nil {

@@ -5,17 +5,19 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dehwyy/x-balance/internal/application/dto"
-	"github.com/dehwyy/x-balance/internal/application/service/transactionservice"
-	"github.com/dehwyy/x-balance/internal/domain/entity/event"
-	user "github.com/dehwyy/x-balance/internal/domain/entity/user"
-	"github.com/dehwyy/x-balance/pkg/storage"
-	"github.com/dehwyy/x-balance/pkg/test/mocks"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
+
+	"github.com/dehwyy/x-balance/internal/application/dto"
+	"github.com/dehwyy/x-balance/internal/application/service/transactionservice"
+	"github.com/dehwyy/x-balance/internal/domain/entity/event"
+	user "github.com/dehwyy/x-balance/internal/domain/entity/user"
+	transactionv1 "github.com/dehwyy/x-balance/internal/generated/pb/common/transaction/v1"
+	"github.com/dehwyy/x-balance/pkg/storage"
+	"github.com/dehwyy/x-balance/pkg/test/mocks"
 )
 
 const testUserID = "user-123"
@@ -37,25 +39,25 @@ func TestListTransactions_Success(t *testing.T) {
 
 	eventValues := []event.Event{
 		{
-			ID:            event.NewID("event-1"),
-			UserID:        user.NewID(testUserID),
-			Type:          event.TypeCredit,
-			Amount:        event.NewAmount(decimal.NewFromInt(100)),
-			TransactionID: event.NewTransactionID("tx-1"),
+			ID:            event.ID("event-1"),
+			UserID:        user.ID(testUserID),
+			Type:          transactionv1.TransactionType_TRANSACTION_TYPE_CREDIT,
+			Amount:        event.Amount(decimal.NewFromInt(100)),
+			TransactionID: event.TransactionID("tx-1"),
 		},
 		{
-			ID:            event.NewID("event-2"),
-			UserID:        user.NewID(testUserID),
-			Type:          event.TypeDebit,
-			Amount:        event.NewAmount(decimal.NewFromInt(-50)),
-			TransactionID: event.NewTransactionID("tx-2"),
+			ID:            event.ID("event-2"),
+			UserID:        user.ID(testUserID),
+			Type:          transactionv1.TransactionType_TRANSACTION_TYPE_DEBIT,
+			Amount:        event.Amount(decimal.NewFromInt(-50)),
+			TransactionID: event.TransactionID("tx-2"),
 		},
 	}
 
 	expectedTotal := int64(2)
 
 	expectedReq := dto.EventListRequest{
-		UserID:     user.NewID(testUserID),
+		UserID:     user.ID(testUserID),
 		Pagination: storage.NewPagination(10, 0),
 		From:       &fromTime,
 		To:         &toTime,
@@ -66,7 +68,7 @@ func TestListTransactions_Success(t *testing.T) {
 
 	svc := newTransactionService(eventRepo)
 	resp, err := svc.ListTransactions(ctx, &transactionservice.ListTransactionsRequest{
-		UserID:     user.NewID(testUserID),
+		UserID:     user.ID(testUserID),
 		Pagination: storage.NewPagination(10, 0),
 		From:       &fromTime,
 		To:         &toTime,
@@ -84,7 +86,7 @@ func TestListTransactions_EmptyResult(t *testing.T) {
 	eventRepo := &mocks.EventRepository{}
 
 	expectedReq := dto.EventListRequest{
-		UserID:     user.NewID(testUserID),
+		UserID:     user.ID(testUserID),
 		Pagination: storage.NewPagination(10, 0),
 	}
 
@@ -93,7 +95,7 @@ func TestListTransactions_EmptyResult(t *testing.T) {
 
 	svc := newTransactionService(eventRepo)
 	resp, err := svc.ListTransactions(ctx, &transactionservice.ListTransactionsRequest{
-		UserID:     user.NewID(testUserID),
+		UserID:     user.ID(testUserID),
 		Pagination: storage.NewPagination(10, 0),
 	})
 
@@ -109,7 +111,7 @@ func TestListTransactions_RepositoryError(t *testing.T) {
 	eventRepo := &mocks.EventRepository{}
 
 	expectedReq := dto.EventListRequest{
-		UserID:     user.NewID(testUserID),
+		UserID:     user.ID(testUserID),
 		Pagination: storage.NewPagination(10, 0),
 	}
 
@@ -118,7 +120,7 @@ func TestListTransactions_RepositoryError(t *testing.T) {
 
 	svc := newTransactionService(eventRepo)
 	_, err := svc.ListTransactions(ctx, &transactionservice.ListTransactionsRequest{
-		UserID:     user.NewID(testUserID),
+		UserID:     user.ID(testUserID),
 		Pagination: storage.NewPagination(10, 0),
 	})
 
@@ -132,20 +134,20 @@ func TestGetTransaction_Success(t *testing.T) {
 	eventRepo := &mocks.EventRepository{}
 
 	expectedEvent := event.Event{
-		ID:            event.NewID(testEventID),
-		UserID:        user.NewID(testUserID),
-		Type:          event.TypeCredit,
-		Amount:        event.NewAmount(decimal.NewFromInt(100)),
-		TransactionID: event.NewTransactionID("tx-1"),
+		ID:            event.ID(testEventID),
+		UserID:        user.ID(testUserID),
+		Type:          transactionv1.TransactionType_TRANSACTION_TYPE_CREDIT,
+		Amount:        event.Amount(decimal.NewFromInt(100)),
+		TransactionID: event.TransactionID("tx-1"),
 	}
 
-	eventRepo.On("GetByID", mock.Anything, dto.EventGetByIDRequest{ID: event.NewID(testEventID)}).
+	eventRepo.On("GetByID", mock.Anything, dto.EventGetByIDRequest{ID: event.ID(testEventID)}).
 		Return(dto.EventGetByIDResponse{Event: expectedEvent}, nil)
 
 	svc := newTransactionService(eventRepo)
 	resp, err := svc.GetTransaction(ctx, &transactionservice.GetTransactionRequest{
-		UserID: user.NewID(testUserID),
-		TxID:   event.NewID(testEventID),
+		UserID: user.ID(testUserID),
+		TxID:   event.ID(testEventID),
 	})
 
 	require.NoError(t, err)
@@ -158,13 +160,13 @@ func TestGetTransaction_NotFound(t *testing.T) {
 
 	eventRepo := &mocks.EventRepository{}
 
-	eventRepo.On("GetByID", mock.Anything, dto.EventGetByIDRequest{ID: event.NewID(testEventID)}).
+	eventRepo.On("GetByID", mock.Anything, dto.EventGetByIDRequest{ID: event.ID(testEventID)}).
 		Return(dto.EventGetByIDResponse{}, gorm.ErrRecordNotFound)
 
 	svc := newTransactionService(eventRepo)
 	_, err := svc.GetTransaction(ctx, &transactionservice.GetTransactionRequest{
-		UserID: user.NewID(testUserID),
-		TxID:   event.NewID(testEventID),
+		UserID: user.ID(testUserID),
+		TxID:   event.ID(testEventID),
 	})
 
 	assert.ErrorIs(t, err, gorm.ErrRecordNotFound)

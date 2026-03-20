@@ -45,15 +45,15 @@ func TestUser_ValueObjects(t *testing.T) {
 			assert.NoError(t, err)
 
 			u := &user.User{
-				ID:             user.ID{Value: tt.id},
-				Name:           user.Name{Value: tt.userName},
-				OverdraftLimit: user.OverdraftLimit{Value: overdraft},
+				ID:             user.ID(tt.id),
+				Name:           user.Name(tt.userName),
+				OverdraftLimit: user.OverdraftLimit(overdraft),
 			}
 
 			// Test value object access
-			assert.Equal(t, tt.id, u.ID.Value)
-			assert.Equal(t, tt.userName, u.Name.Value)
-			assert.Equal(t, overdraft.String(), u.OverdraftLimit.Value.String())
+			assert.Equal(t, tt.id, string(u.ID))
+			assert.Equal(t, tt.userName, string(u.Name))
+			assert.Equal(t, overdraft.String(), decimal.Decimal(u.OverdraftLimit).String())
 		})
 	}
 }
@@ -63,12 +63,12 @@ func TestOverdraftLimit_NegativeValues(t *testing.T) {
 	negativeOverdraft, _ := decimal.NewFromString("-100")
 
 	u := &user.User{
-		ID:             user.ID{Value: "test-user"},
-		Name:           user.Name{Value: "Test User"},
-		OverdraftLimit: user.OverdraftLimit{Value: negativeOverdraft},
+		ID:             user.ID("test-user"),
+		Name:           user.Name("Test User"),
+		OverdraftLimit: user.OverdraftLimit(negativeOverdraft),
 	}
 
 	// Negative overdraft limit should still be stored as provided
 	// Business logic validation should happen at the service layer
-	assert.Equal(t, "-100", u.OverdraftLimit.Value.String())
+	assert.Equal(t, "-100", decimal.Decimal(u.OverdraftLimit).String())
 }

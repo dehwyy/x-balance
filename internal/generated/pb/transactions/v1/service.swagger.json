@@ -137,7 +137,7 @@
           "title": "Owner user identifier"
         },
         "type": {
-          "type": "string",
+          "$ref": "#/definitions/common.transaction.v1.TransactionType",
           "title": "Event type: credit, debit, freeze_hold, freeze_release"
         },
         "amount": {
@@ -155,6 +155,17 @@
         }
       },
       "description": "Transaction represents a balance event record."
+    },
+    "common.transaction.v1.TransactionType": {
+      "type": "string",
+      "enum": [
+        "TRANSACTION_TYPE_UNSPECIFIED",
+        "TRANSACTION_TYPE_CREDIT",
+        "TRANSACTION_TYPE_DEBIT",
+        "TRANSACTION_TYPE_FREEZE_HOLD",
+        "TRANSACTION_TYPE_FREEZE_RELEASE"
+      ],
+      "default": "TRANSACTION_TYPE_UNSPECIFIED"
     },
     "google.protobuf.Any": {
       "type": "object",

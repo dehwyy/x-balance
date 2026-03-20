@@ -1,5 +1,7 @@
 package snapshot
 
-type ID struct {
-	Value string
+type ID string
+
+func (id ID) String() string {
+	return string(id)
 }

@@ -8,28 +8,28 @@ import (
 func CreditResponseToProto(resp *balanceservice.CreditResponse) *balancev1.CreditResponse {
 	return &balancev1.CreditResponse{
 		NewBalance:    resp.NewBalance.String(),
-		TransactionId: resp.TransactionID.Value,
+		TransactionId: string(resp.TransactionID),
 	}
 }
 
 func DebitResponseToProto(resp *balanceservice.DebitResponse) *balancev1.DebitResponse {
 	return &balancev1.DebitResponse{
 		NewBalance:    resp.NewBalance.String(),
-		TransactionId: resp.TransactionID.Value,
+		TransactionId: string(resp.TransactionID),
 	}
 }
 
 func FreezeResponseToProto(resp *balanceservice.FreezeResponse) *balancev1.FreezeResponse {
 	return &balancev1.FreezeResponse{
 		FrozenAmount:  resp.FrozenAmount.String(),
-		TransactionId: resp.TransactionID.Value,
+		TransactionId: string(resp.TransactionID),
 	}
 }
 
 func UnfreezeResponseToProto(resp *balanceservice.UnfreezeResponse) *balancev1.UnfreezeResponse {
 	return &balancev1.UnfreezeResponse{
 		UnfrozenAmount: resp.UnfrozenAmount.String(),
-		TransactionId:  resp.TransactionID.Value,
+		TransactionId:  string(resp.TransactionID),
 	}
 }
 

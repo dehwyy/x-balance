@@ -1,12 +1,7 @@
 package event
 
-type EventType struct {
-	Value string
-}
-
-var (
-	TypeCredit        = EventType{Value: "credit"}
-	TypeDebit         = EventType{Value: "debit"}
-	TypeFreezeHold    = EventType{Value: "freeze_hold"}
-	TypeFreezeRelease = EventType{Value: "freeze_release"}
-)
+// IMPORTANT: This file has been intentionally left minimal.
+//
+// Previously, this file contained Go enum definitions for transaction types.
+// As part of the type system refactoring, all enums now come from proto definitions only.
+// See internal/generated/pb/common/transaction/v1/transaction.pb.go for TransactionType enum.

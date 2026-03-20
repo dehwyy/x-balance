@@ -2,6 +2,7 @@ package balanceservice
 
 import (
 	"context"
+	"errors"
 
 	"github.com/dehwyy/tracerfx/pkg/tracer/dspan"
 	tlog "github.com/dehwyy/tracerfx/pkg/tracer/log"
@@ -10,6 +11,8 @@ import (
 	"github.com/dehwyy/x-balance/internal/application/dto"
 	"github.com/dehwyy/x-balance/internal/domain/entity/event"
 	user "github.com/dehwyy/x-balance/internal/domain/entity/user"
+	"github.com/dehwyy/x-balance/internal/domain/repository"
+	transactionv1 "github.com/dehwyy/x-balance/internal/generated/pb/common/transaction/v1"
 )
 
 type FreezeRequest struct {
@@ -40,9 +43,9 @@ func (s *Service) Freeze(
 		dto.EventGetByTxIDRequest{TransactionID: req.TransactionID},
 	)
 	if err == nil {
-		return dspan.Response(span, &FreezeResponse{FrozenAmount: existingEvent.Event.Amount.Value, TransactionID: req.TransactionID}), nil
+		return dspan.Response(span, &FreezeResponse{FrozenAmount: decimal.Decimal(existingEvent.Event.Amount), TransactionID: req.TransactionID}), nil
 	}
-	if !isNotFound(err) {
+	if !errors.Is(err, repository.ErrNotFound) {
 		return nil, span.Err(err)
 	}
 
@@ -89,11 +92,11 @@ func (s *Service) Freeze(
 					return err
 				}
 
-				snapID := event.NewSnapshotID(snap.ID.Value)
+				snapID := event.SnapshotID(string(snap.ID))
 				newEvent := event.New(
 					req.UserID,
-					event.TypeFreezeHold,
-					event.NewAmount(req.Amount),
+					transactionv1.TransactionType_TRANSACTION_TYPE_FREEZE_HOLD,
+					event.Amount(req.Amount),
 					req.TransactionID,
 					&snapID,
 					req.FreezeTimeoutSeconds,

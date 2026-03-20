@@ -2,6 +2,7 @@ package balanceservice
 
 import (
 	"context"
+	"errors"
 
 	"github.com/dehwyy/tracerfx/pkg/tracer/dspan"
 	tlog "github.com/dehwyy/tracerfx/pkg/tracer/log"
@@ -10,6 +11,8 @@ import (
 	"github.com/dehwyy/x-balance/internal/application/dto"
 	"github.com/dehwyy/x-balance/internal/domain/entity/event"
 	user "github.com/dehwyy/x-balance/internal/domain/entity/user"
+	"github.com/dehwyy/x-balance/internal/domain/repository"
+	transactionv1 "github.com/dehwyy/x-balance/internal/generated/pb/common/transaction/v1"
 )
 
 type UnfreezeRequest struct {
@@ -40,9 +43,9 @@ func (s *Service) Unfreeze(
 		dto.EventGetByTxIDRequest{TransactionID: releaseKey},
 	)
 	if err == nil {
-		return dspan.Response(span, &UnfreezeResponse{UnfrozenAmount: existingEvent.Event.Amount.Value.Abs(), TransactionID: req.TransactionID}), nil
+		return dspan.Response(span, &UnfreezeResponse{UnfrozenAmount: decimal.Decimal(existingEvent.Event.Amount).Abs(), TransactionID: req.TransactionID}), nil
 	}
-	if !isNotFound(err) {
+	if !errors.Is(err, repository.ErrNotFound) {
 		return nil, span.Err(err)
 	}
 
@@ -54,7 +57,7 @@ func (s *Service) Unfreeze(
 		return nil, span.Err(ErrFreezeNotFound)
 	}
 
-	frozenAmount := frozenEvent.Event.Amount.Value
+	frozenAmount := decimal.Decimal(frozenEvent.Event.Amount)
 
 	err = s.tx.Do(
 		ctx,
@@ -62,8 +65,8 @@ func (s *Service) Unfreeze(
 		func(ctx context.Context) error {
 			newEvent := event.New(
 				req.UserID,
-				event.TypeFreezeRelease,
-				event.NewAmount(frozenAmount.Neg()),
+				transactionv1.TransactionType_TRANSACTION_TYPE_FREEZE_RELEASE,
+				event.Amount(frozenAmount.Neg()),
 				releaseKey,
 				nil,
 				0,

@@ -1,0 +1,3 @@
+// DELETED: This file contained Go enum definitions that have been replaced
+// with proto-generated enums. See internal/generated/pb/common/transaction/v1
+// for the new TransactionType enum.

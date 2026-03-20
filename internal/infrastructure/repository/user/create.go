@@ -5,8 +5,8 @@ import (
 
 	"github.com/dehwyy/tracerfx/pkg/tracer/dspan"
 	"github.com/dehwyy/x-balance/internal/application/dto"
+	"github.com/dehwyy/x-balance/internal/domain/entity/user"
 	userconvert "github.com/dehwyy/x-balance/internal/domain/entity/user/convert"
-	"github.com/dehwyy/x-balance/internal/infrastructure/repository/models"
 )
 
 func (impl *Implementation) Create(
@@ -16,10 +16,11 @@ func (impl *Implementation) Create(
 	ctx, span := dspan.Start(ctx, "userrepo.Implementation.Create", dspan.Attr("req", req))
 	defer span.End()
 
-	m := &models.User{
-		Name:           req.Name.Value,
-		OverdraftLimit: req.OverdraftLimit.Value,
+	userEntity := &user.User{
+		Name:           req.Name,
+		OverdraftLimit: req.OverdraftLimit,
 	}
+	m := userconvert.UserToModel(userEntity)
 
 	db := impl.tx.GetConnection(ctx)
 	if err := db.Create(m).Error; err != nil {

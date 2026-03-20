@@ -10,9 +10,9 @@ import (
 
 func UserToProto(u *user.User) *userv1.User {
 	proto := &userv1.User{
-		Id:             u.ID.Value,
-		Name:           u.Name.Value,
-		OverdraftLimit: u.OverdraftLimit.Value.String(),
+		Id:             string(u.ID),
+		Name:           string(u.Name),
+		OverdraftLimit: decimal.Decimal(u.OverdraftLimit).String(),
 		CreatedAt:      timestamppb.New(u.CreatedAt),
 		UpdatedAt:      timestamppb.New(u.UpdatedAt),
 	}
@@ -28,9 +28,9 @@ func ProtoToUser(p *userv1.User) *user.User {
 	overdraftLimit, _ := decimal.NewFromString(p.OverdraftLimit)
 
 	u := &user.User{
-		ID:             user.ID{Value: p.Id},
-		Name:           user.Name{Value: p.Name},
-		OverdraftLimit: user.OverdraftLimit{Value: overdraftLimit},
+		ID:             user.ID(p.Id),
+		Name:           user.Name(p.Name),
+		OverdraftLimit: user.OverdraftLimit(overdraftLimit),
 		CreatedAt:      p.CreatedAt.AsTime(),
 		UpdatedAt:      p.UpdatedAt.AsTime(),
 	}

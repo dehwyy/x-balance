@@ -1,9 +1,11 @@
 package event
 
-type TransactionID struct {
-	Value string
+type TransactionID string
+
+func (t TransactionID) String() string {
+	return string(t)
 }
 
-func NewTransactionID(v string) TransactionID { return TransactionID{Value: v} }
-
-func (t TransactionID) ReleaseKey() TransactionID { return TransactionID{Value: t.Value + ":release"} }
+func (t TransactionID) ReleaseKey() TransactionID {
+	return TransactionID(string(t) + ":release")
+}

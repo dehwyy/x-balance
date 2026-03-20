@@ -17,7 +17,7 @@ func (impl *Implementation) List(
 	ctx, span := dspan.Start(ctx, "eventrepo.Implementation.List", dspan.Attr("req", req))
 	defer span.End()
 
-	db := impl.tx.GetConnection(ctx).Where("user_id = ?", req.UserID.Value)
+	db := impl.tx.GetConnection(ctx).Where("user_id = ?", string(req.UserID))
 
 	if req.From != nil {
 		db = db.Where("created_at >= ?", req.From)

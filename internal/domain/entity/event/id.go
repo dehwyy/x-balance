@@ -1,9 +1,7 @@
 package event
 
-type ID struct {
-	Value string
-}
+type ID string
 
-func NewID(v string) ID {
-	return ID{Value: v}
+func (id ID) String() string {
+	return string(id)
 }

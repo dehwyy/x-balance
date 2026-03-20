@@ -11,11 +11,11 @@ import (
 
 func EventToProto(e *event.Event) *transactionv1.Transaction {
 	return &transactionv1.Transaction{
-		Id:            e.ID.Value,
-		UserId:        e.UserID.Value,
-		Type:          e.Type.Value,
-		Amount:        e.Amount.Value.String(),
-		TransactionId: e.TransactionID.Value,
+		Id:            string(e.ID),
+		UserId:        string(e.UserID),
+		Type:          e.Type,
+		Amount:        decimal.Decimal(e.Amount).String(),
+		TransactionId: string(e.TransactionID),
 		CreatedAt:     timestamppb.New(e.CreatedAt),
 	}
 }
@@ -24,11 +24,11 @@ func ProtoToEvent(p *transactionv1.Transaction) *event.Event {
 	amount, _ := decimal.NewFromString(p.Amount)
 
 	return &event.Event{
-		ID:            event.ID{Value: p.Id},
-		UserID:        user.ID{Value: p.UserId},
-		Type:          event.EventType{Value: p.Type},
-		Amount:        event.Amount{Value: amount},
-		TransactionID: event.TransactionID{Value: p.TransactionId},
+		ID:            event.ID(p.Id),
+		UserID:        user.ID(p.UserId),
+		Type:          p.Type,
+		Amount:        event.Amount(amount),
+		TransactionID: event.TransactionID(p.TransactionId),
 		CreatedAt:     p.CreatedAt.AsTime(),
 	}
 }

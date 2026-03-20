@@ -23,7 +23,7 @@ func (impl *Implementation) Get(
 
 	val, err := impl.client.Get(
 		ctx,
-		balanceKey(req.UserID.Value),
+		balanceKey(string(req.UserID)),
 	).Result()
 	if err != nil {
 		if err == redis.Nil {

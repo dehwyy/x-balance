@@ -2,15 +2,17 @@ package balanceservice
 
 import (
 	"context"
+	"errors"
 
 	"github.com/dehwyy/tracerfx/pkg/tracer/dspan"
 	tlog "github.com/dehwyy/tracerfx/pkg/tracer/log"
 	"github.com/shopspring/decimal"
-	"gorm.io/gorm"
 
 	"github.com/dehwyy/x-balance/internal/application/dto"
 	"github.com/dehwyy/x-balance/internal/domain/entity/event"
 	user "github.com/dehwyy/x-balance/internal/domain/entity/user"
+	"github.com/dehwyy/x-balance/internal/domain/repository"
+	transactionv1 "github.com/dehwyy/x-balance/internal/generated/pb/common/transaction/v1"
 )
 
 type CreditRequest struct {
@@ -37,16 +39,24 @@ func (s *Service) Credit(
 
 	_, err := s.eventRepo.GetByTransactionID(
 		ctx,
-		dto.EventGetByTxIDRequest{TransactionID: req.TransactionID},
+		dto.EventGetByTxIDRequest{
+			TransactionID: req.TransactionID,
+		},
 	)
 	if err == nil {
 		bal, _, err := s.computeBalance(ctx, req.UserID)
 		if err != nil {
 			return nil, span.Err(err)
 		}
-		return dspan.Response(span, &CreditResponse{NewBalance: bal, TransactionID: req.TransactionID}), nil
+		return dspan.Response(
+			span,
+			&CreditResponse{
+				NewBalance:    bal,
+				TransactionID: req.TransactionID,
+			},
+		), nil
 	}
-	if !isNotFound(err) {
+	if !errors.Is(err, repository.ErrNotFound) {
 		return nil, span.Err(err)
 	}
 
@@ -59,7 +69,9 @@ func (s *Service) Credit(
 			func(ctx context.Context) error {
 				snapshotResult, err := s.snapshotRepo.GetLatestByUserID(
 					ctx,
-					dto.SnapshotGetLatestByUserIDRequest{UserID: req.UserID},
+					dto.SnapshotGetLatestByUserIDRequest{
+						UserID: req.UserID,
+					},
 				)
 				if err != nil {
 					return err
@@ -68,30 +80,37 @@ func (s *Service) Credit(
 
 				if err := s.snapshotRepo.UpdateVersion(
 					ctx,
-					dto.SnapshotUpdateVersionRequest{Snapshot: snap},
+					dto.SnapshotUpdateVersionRequest{
+						Snapshot: snap,
+					},
 				); err != nil {
 					return err
 				}
 
-				snapID := event.NewSnapshotID(snap.ID.Value)
+				snapID := event.SnapshotID(string(snap.ID))
 				newEvent := event.New(
 					req.UserID,
-					event.TypeCredit,
-					event.NewAmount(req.Amount),
+					transactionv1.TransactionType_TRANSACTION_TYPE_CREDIT,
+					event.Amount(req.Amount),
 					req.TransactionID,
 					&snapID,
 					0,
 				)
 				if _, err := s.eventRepo.Create(
 					ctx,
-					dto.EventCreateRequest{Event: newEvent},
+					dto.EventCreateRequest{
+						Event: newEvent,
+					},
 				); err != nil {
 					return err
 				}
 
 				sumSinceSnapshot, err := s.eventRepo.SumSinceSnapshot(
 					ctx,
-					dto.EventSumSinceSnapshotRequest{UserID: req.UserID, SnapshotID: snap.ID},
+					dto.EventSumSinceSnapshotRequest{
+						UserID:     req.UserID,
+						SnapshotID: snap.ID,
+					},
 				)
 				if err != nil {
 					return err
@@ -107,7 +126,9 @@ func (s *Service) Credit(
 
 	if err := s.balanceCache.Invalidate(
 		ctx,
-		dto.BalanceCacheInvalidateRequest{UserID: req.UserID},
+		dto.BalanceCacheInvalidateRequest{
+			UserID: req.UserID,
+		},
 	); err != nil {
 		tlog.FromContext(ctx).Error("failed to invalidate balance cache", "err", err)
 	}
@@ -115,9 +136,11 @@ func (s *Service) Credit(
 		tlog.FromContext(ctx).Error("failed to maybe create snapshot", "err", err)
 	}
 
-	return dspan.Response(span, &CreditResponse{NewBalance: newBalance, TransactionID: req.TransactionID}), nil
-}
-
-func isNotFound(err error) bool {
-	return err == gorm.ErrRecordNotFound
+	return dspan.Response(
+		span,
+		&CreditResponse{
+			NewBalance:    newBalance,
+			TransactionID: req.TransactionID,
+		},
+	), nil
 }

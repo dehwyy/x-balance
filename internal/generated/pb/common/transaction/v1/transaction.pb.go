@@ -7,13 +7,12 @@
 package transactionv1
 
 import (
-	reflect "reflect"
-	sync "sync"
-	unsafe "unsafe"
-
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
+	reflect "reflect"
+	sync "sync"
+	unsafe "unsafe"
 )
 
 const (
@@ -23,6 +22,61 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type TransactionType int32
+
+const (
+	TransactionType_TRANSACTION_TYPE_UNSPECIFIED    TransactionType = 0
+	TransactionType_TRANSACTION_TYPE_CREDIT         TransactionType = 1
+	TransactionType_TRANSACTION_TYPE_DEBIT          TransactionType = 2
+	TransactionType_TRANSACTION_TYPE_FREEZE_HOLD    TransactionType = 3
+	TransactionType_TRANSACTION_TYPE_FREEZE_RELEASE TransactionType = 4
+)
+
+// Enum value maps for TransactionType.
+var (
+	TransactionType_name = map[int32]string{
+		0: "TRANSACTION_TYPE_UNSPECIFIED",
+		1: "TRANSACTION_TYPE_CREDIT",
+		2: "TRANSACTION_TYPE_DEBIT",
+		3: "TRANSACTION_TYPE_FREEZE_HOLD",
+		4: "TRANSACTION_TYPE_FREEZE_RELEASE",
+	}
+	TransactionType_value = map[string]int32{
+		"TRANSACTION_TYPE_UNSPECIFIED":    0,
+		"TRANSACTION_TYPE_CREDIT":         1,
+		"TRANSACTION_TYPE_DEBIT":          2,
+		"TRANSACTION_TYPE_FREEZE_HOLD":    3,
+		"TRANSACTION_TYPE_FREEZE_RELEASE": 4,
+	}
+)
+
+func (x TransactionType) Enum() *TransactionType {
+	p := new(TransactionType)
+	*p = x
+	return p
+}
+
+func (x TransactionType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (TransactionType) Descriptor() protoreflect.EnumDescriptor {
+	return file_common_transaction_v1_transaction_proto_enumTypes[0].Descriptor()
+}
+
+func (TransactionType) Type() protoreflect.EnumType {
+	return &file_common_transaction_v1_transaction_proto_enumTypes[0]
+}
+
+func (x TransactionType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use TransactionType.Descriptor instead.
+func (TransactionType) EnumDescriptor() ([]byte, []int) {
+	return file_common_transaction_v1_transaction_proto_rawDescGZIP(), []int{0}
+}
+
 // Transaction represents a balance event record.
 type Transaction struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -31,7 +85,7 @@ type Transaction struct {
 	// Owner user identifier
 	UserId string `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	// Event type: credit, debit, freeze_hold, freeze_release
-	Type string `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
+	Type TransactionType `protobuf:"varint,3,opt,name=type,proto3,enum=common.transaction.v1.TransactionType" json:"type,omitempty"`
 	// Decimal amount as string
 	Amount string `protobuf:"bytes,4,opt,name=amount,proto3" json:"amount,omitempty"`
 	// Client-provided idempotency key
@@ -86,11 +140,11 @@ func (x *Transaction) GetUserId() string {
 	return ""
 }
 
-func (x *Transaction) GetType() string {
+func (x *Transaction) GetType() TransactionType {
 	if x != nil {
 		return x.Type
 	}
-	return ""
+	return TransactionType_TRANSACTION_TYPE_UNSPECIFIED
 }
 
 func (x *Transaction) GetAmount() string {
@@ -118,15 +172,21 @@ var File_common_transaction_v1_transaction_proto protoreflect.FileDescriptor
 
 const file_common_transaction_v1_transaction_proto_rawDesc = "" +
 	"\n" +
-	"'common/transaction/v1/transaction.proto\x12\x15common.transaction.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xc4\x01\n" +
+	"'common/transaction/v1/transaction.proto\x12\x15common.transaction.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xec\x01\n" +
 	"\vTransaction\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
-	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x12\n" +
-	"\x04type\x18\x03 \x01(\tR\x04type\x12\x16\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\x12:\n" +
+	"\x04type\x18\x03 \x01(\x0e2&.common.transaction.v1.TransactionTypeR\x04type\x12\x16\n" +
 	"\x06amount\x18\x04 \x01(\tR\x06amount\x12%\n" +
 	"\x0etransaction_id\x18\x05 \x01(\tR\rtransactionId\x129\n" +
 	"\n" +
-	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAtB\xfa\x01\n" +
+	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt*\xb3\x01\n" +
+	"\x0fTransactionType\x12 \n" +
+	"\x1cTRANSACTION_TYPE_UNSPECIFIED\x10\x00\x12\x1b\n" +
+	"\x17TRANSACTION_TYPE_CREDIT\x10\x01\x12\x1a\n" +
+	"\x16TRANSACTION_TYPE_DEBIT\x10\x02\x12 \n" +
+	"\x1cTRANSACTION_TYPE_FREEZE_HOLD\x10\x03\x12#\n" +
+	"\x1fTRANSACTION_TYPE_FREEZE_RELEASE\x10\x04B\xfa\x01\n" +
 	"\x19com.common.transaction.v1B\x10TransactionProtoP\x01ZUgithub.com/dehwyy/x-balance/internal/generated/pb/common/transaction/v1;transactionv1\xa2\x02\x03CTX\xaa\x02\x15Common.Transaction.V1\xca\x02\x15Common\\Transaction\\V1\xe2\x02!Common\\Transaction\\V1\\GPBMetadata\xea\x02\x17Common::Transaction::V1b\x06proto3"
 
 var (
@@ -141,18 +201,21 @@ func file_common_transaction_v1_transaction_proto_rawDescGZIP() []byte {
 	return file_common_transaction_v1_transaction_proto_rawDescData
 }
 
+var file_common_transaction_v1_transaction_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_common_transaction_v1_transaction_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_common_transaction_v1_transaction_proto_goTypes = []any{
-	(*Transaction)(nil),           // 0: common.transaction.v1.Transaction
-	(*timestamppb.Timestamp)(nil), // 1: google.protobuf.Timestamp
+	(TransactionType)(0),          // 0: common.transaction.v1.TransactionType
+	(*Transaction)(nil),           // 1: common.transaction.v1.Transaction
+	(*timestamppb.Timestamp)(nil), // 2: google.protobuf.Timestamp
 }
 var file_common_transaction_v1_transaction_proto_depIdxs = []int32{
-	1, // 0: common.transaction.v1.Transaction.created_at:type_name -> google.protobuf.Timestamp
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	0, // 0: common.transaction.v1.Transaction.type:type_name -> common.transaction.v1.TransactionType
+	2, // 1: common.transaction.v1.Transaction.created_at:type_name -> google.protobuf.Timestamp
+	2, // [2:2] is the sub-list for method output_type
+	2, // [2:2] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_common_transaction_v1_transaction_proto_init() }
@@ -165,13 +228,14 @@ func file_common_transaction_v1_transaction_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_common_transaction_v1_transaction_proto_rawDesc), len(file_common_transaction_v1_transaction_proto_rawDesc)),
-			NumEnums:      0,
+			NumEnums:      1,
 			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_common_transaction_v1_transaction_proto_goTypes,
 		DependencyIndexes: file_common_transaction_v1_transaction_proto_depIdxs,
+		EnumInfos:         file_common_transaction_v1_transaction_proto_enumTypes,
 		MessageInfos:      file_common_transaction_v1_transaction_proto_msgTypes,
 	}.Build()
 	File_common_transaction_v1_transaction_proto = out.File
