@@ -5,5 +5,7 @@ type ID struct {
 }
 
 func NewID(v string) ID {
-	return ID{Value: v}
+	return ID{
+		Value: v,
+	}
 }

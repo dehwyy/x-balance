@@ -12,13 +12,23 @@ func (h *Handler) UpdateUser(
 	ctx context.Context,
 	req *userspb.UpdateUserRequest,
 ) (*userspb.UpdateUserResponse, error) {
-	ctx, span := dspan.Start(ctx, "userDelivery.UpdateUser", dspan.Attr("req", req))
+	ctx, span := dspan.Start(
+		ctx,
+		"userDelivery.UpdateUser",
+		dspan.Attr("req", req),
+	)
 	defer span.End()
 
-	response, err := h.userservice.UpdateUser(ctx, userconvert.UpdateUserRequestToDomain(req))
+	response, err := h.userservice.UpdateUser(
+		ctx,
+		userconvert.UpdateUserRequestToDomain(req),
+	)
 	if err != nil {
 		return nil, span.Err(err)
 	}
 
-	return dspan.Response(span, userconvert.UpdateUserResponseToProto(response)), nil
+	return dspan.Response(
+		span,
+		userconvert.UpdateUserResponseToProto(response),
+	), nil
 }

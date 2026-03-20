@@ -12,13 +12,23 @@ func (h *Handler) CreateUser(
 	ctx context.Context,
 	req *userspb.CreateUserRequest,
 ) (*userspb.CreateUserResponse, error) {
-	ctx, span := dspan.Start(ctx, "userDelivery.CreateUser", dspan.Attr("req", req))
+	ctx, span := dspan.Start(
+		ctx,
+		"userDelivery.CreateUser",
+		dspan.Attr("req", req),
+	)
 	defer span.End()
 
-	response, err := h.userservice.CreateUser(ctx, userconvert.CreateUserRequestToDomain(req))
+	response, err := h.userservice.CreateUser(
+		ctx,
+		userconvert.CreateUserRequestToDomain(req),
+	)
 	if err != nil {
 		return nil, span.Err(err)
 	}
 
-	return dspan.Response(span, userconvert.CreateUserResponseToProto(response)), nil
+	return dspan.Response(
+		span,
+		userconvert.CreateUserResponseToProto(response),
+	), nil
 }

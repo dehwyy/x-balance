@@ -12,13 +12,23 @@ func (h *Handler) ListTransactions(
 	ctx context.Context,
 	req *transactionspb.ListTransactionsRequest,
 ) (*transactionspb.ListTransactionsResponse, error) {
-	ctx, span := dspan.Start(ctx, "transactionDelivery.ListTransactions", dspan.Attr("req", req))
+	ctx, span := dspan.Start(
+		ctx,
+		"transactionDelivery.ListTransactions",
+		dspan.Attr("req", req),
+	)
 	defer span.End()
 
-	response, err := h.transactionservice.ListTransactions(ctx, transactionconvert.ListTransactionsRequestToDomain(req))
+	response, err := h.transactionservice.ListTransactions(
+		ctx,
+		transactionconvert.ListTransactionsRequestToDomain(req),
+	)
 	if err != nil {
 		return nil, span.Err(err)
 	}
 
-	return dspan.Response(span, transactionconvert.ListTransactionsResponseToProto(response)), nil
+	return dspan.Response(
+		span,
+		transactionconvert.ListTransactionsResponseToProto(response),
+	), nil
 }

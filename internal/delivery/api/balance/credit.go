@@ -12,13 +12,23 @@ func (h *Handler) Credit(
 	ctx context.Context,
 	req *balancev1.CreditRequest,
 ) (*balancev1.CreditResponse, error) {
-	ctx, span := dspan.Start(ctx, "balanceDelivery.Credit", dspan.Attr("req", req))
+	ctx, span := dspan.Start(
+		ctx,
+		"balanceDelivery.Credit",
+		dspan.Attr("req", req),
+	)
 	defer span.End()
 
-	response, err := h.balanceservice.Credit(ctx, balanceconvert.CreditRequestToDomain(req))
+	response, err := h.balanceservice.Credit(
+		ctx,
+		balanceconvert.CreditRequestToDomain(req),
+	)
 	if err != nil {
 		return nil, span.Err(err)
 	}
 
-	return dspan.Response(span, balanceconvert.CreditResponseToProto(response)), nil
+	return dspan.Response(
+		span,
+		balanceconvert.CreditResponseToProto(response),
+	), nil
 }

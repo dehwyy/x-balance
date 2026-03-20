@@ -5,5 +5,7 @@ type Name struct {
 }
 
 func NewName(v string) Name {
-	return Name{Value: v}
+	return Name{
+		Value: v,
+	}
 }
