@@ -12,13 +12,23 @@ func (h *Handler) GetBalance(
 	ctx context.Context,
 	req *balancev1.GetBalanceRequest,
 ) (*balancev1.GetBalanceResponse, error) {
-	ctx, span := dspan.Start(ctx, "balanceDelivery.GetBalance", dspan.Attr("req", req))
+	ctx, span := dspan.Start(
+		ctx,
+		"balanceDelivery.GetBalance",
+		dspan.Attr("req", req),
+	)
 	defer span.End()
 
-	response, err := h.balanceservice.GetBalance(ctx, balanceconvert.GetBalanceRequestToDomain(req))
+	response, err := h.balanceservice.GetBalance(
+		ctx,
+		balanceconvert.GetBalanceRequestToDomain(req),
+	)
 	if err != nil {
 		return nil, span.Err(err)
 	}
 
-	return dspan.Response(span, balanceconvert.GetBalanceResponseToProto(response)), nil
+	return dspan.Response(
+		span,
+		balanceconvert.GetBalanceResponseToProto(response),
+	), nil
 }

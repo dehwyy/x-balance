@@ -18,5 +18,7 @@ type Handler struct {
 }
 
 func New(opts Opts) *Handler {
-	return &Handler{transactionservice: opts.TransactionService}
+	return &Handler{
+		transactionservice: opts.TransactionService,
+	}
 }

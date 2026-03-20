@@ -12,13 +12,23 @@ func (h *Handler) Unfreeze(
 	ctx context.Context,
 	req *balancev1.UnfreezeRequest,
 ) (*balancev1.UnfreezeResponse, error) {
-	ctx, span := dspan.Start(ctx, "balanceDelivery.Unfreeze", dspan.Attr("req", req))
+	ctx, span := dspan.Start(
+		ctx,
+		"balanceDelivery.Unfreeze",
+		dspan.Attr("req", req),
+	)
 	defer span.End()
 
-	response, err := h.balanceservice.Unfreeze(ctx, balanceconvert.UnfreezeRequestToDomain(req))
+	response, err := h.balanceservice.Unfreeze(
+		ctx,
+		balanceconvert.UnfreezeRequestToDomain(req),
+	)
 	if err != nil {
 		return nil, span.Err(err)
 	}
 
-	return dspan.Response(span, balanceconvert.UnfreezeResponseToProto(response)), nil
+	return dspan.Response(
+		span,
+		balanceconvert.UnfreezeResponseToProto(response),
+	), nil
 }

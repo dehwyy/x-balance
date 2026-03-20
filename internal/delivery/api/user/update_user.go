@@ -12,7 +12,11 @@ func (h *Handler) UpdateUser(
 	ctx context.Context,
 	req *userspb.UpdateUserRequest,
 ) (*userspb.UpdateUserResponse, error) {
-	ctx, span := dspan.Start(ctx, "userDelivery.UpdateUser", dspan.Attr("req", req))
+	ctx, span := dspan.Start(
+		ctx,
+		"userDelivery.UpdateUser",
+		dspan.Attr("req", req),
+	)
 	defer span.End()
 
 	response, err := h.userservice.UpdateUser(

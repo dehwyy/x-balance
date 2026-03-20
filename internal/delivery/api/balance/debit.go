@@ -12,13 +12,23 @@ func (h *Handler) Debit(
 	ctx context.Context,
 	req *balancev1.DebitRequest,
 ) (*balancev1.DebitResponse, error) {
-	ctx, span := dspan.Start(ctx, "balanceDelivery.Debit", dspan.Attr("req", req))
+	ctx, span := dspan.Start(
+		ctx,
+		"balanceDelivery.Debit",
+		dspan.Attr("req", req),
+	)
 	defer span.End()
 
-	response, err := h.balanceservice.Debit(ctx, balanceconvert.DebitRequestToDomain(req))
+	response, err := h.balanceservice.Debit(
+		ctx,
+		balanceconvert.DebitRequestToDomain(req),
+	)
 	if err != nil {
 		return nil, span.Err(err)
 	}
 
-	return dspan.Response(span, balanceconvert.DebitResponseToProto(response)), nil
+	return dspan.Response(
+		span,
+		balanceconvert.DebitResponseToProto(response),
+	), nil
 }

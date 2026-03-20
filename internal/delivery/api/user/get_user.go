@@ -12,13 +12,23 @@ func (h *Handler) GetUser(
 	ctx context.Context,
 	req *userspb.GetUserRequest,
 ) (*userspb.GetUserResponse, error) {
-	ctx, span := dspan.Start(ctx, "userDelivery.GetUser", dspan.Attr("req", req))
+	ctx, span := dspan.Start(
+		ctx,
+		"userDelivery.GetUser",
+		dspan.Attr("req", req),
+	)
 	defer span.End()
 
-	response, err := h.userservice.GetUser(ctx, userconvert.GetUserRequestToDomain(req))
+	response, err := h.userservice.GetUser(
+		ctx,
+		userconvert.GetUserRequestToDomain(req),
+	)
 	if err != nil {
 		return nil, span.Err(err)
 	}
 
-	return dspan.Response(span, userconvert.GetUserResponseToProto(response)), nil
+	return dspan.Response(
+		span,
+		userconvert.GetUserResponseToProto(response),
+	), nil
 }
